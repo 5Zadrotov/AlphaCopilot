@@ -1,4 +1,4 @@
-internal class Program
+internal partial class Program
 {
     //      dotnet publish -r win-x64 -c Release --self-contained true
     private static void Main(string[] args)

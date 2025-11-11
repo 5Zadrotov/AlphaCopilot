@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "dgSpecHash": "Ffhw+D6X9wc=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\ivank\\Desktop\\Учёба\\C#\\WebApp\\WebApp\\AlphaBusinessAssistant\\AlphaBusinessAssistant\\AlphaBusinessAssistant.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\9.0.10\\microsoft.aspnetcore.authentication.jwtbearer.9.0.10.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.0-rc.2.25502.107\\microsoft.aspnetcore.openapi.10.0.0-rc.2.25502.107.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.entityframeworkcore\\9.0.10\\microsoft.entityframeworkcore.9.0.10.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.entityframeworkcore.abstractions\\9.0.10\\microsoft.entityframeworkcore.abstractions.9.0.10.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\9.0.10\\microsoft.entityframeworkcore.analyzers.9.0.10.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.entityframeworkcore.inmemory\\9.0.10\\microsoft.entityframeworkcore.inmemory.9.0.10.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.14.0\\microsoft.identitymodel.abstractions.8.14.0.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.14.0\\microsoft.identitymodel.jsonwebtokens.8.14.0.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.identitymodel.logging\\8.14.0\\microsoft.identitymodel.logging.8.14.0.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.identitymodel.protocols\\8.14.0\\microsoft.identitymodel.protocols.8.14.0.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.identitymodel.protocols.openidconnect\\8.14.0\\microsoft.identitymodel.protocols.openidconnect.8.14.0.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.14.0\\microsoft.identitymodel.tokens.8.14.0.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512",
+    "C:\\Users\\ivank\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.14.0\\system.identitymodel.tokens.jwt.8.14.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,6 @@
+@AlphaBusinessAssistant_HostAddress = http://localhost:5138
+
+GET {{AlphaBusinessAssistant_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
