@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Space, Card, Row, Col, Divider, Badge } from 'antd';
-import { UserOutlined, LoginOutlined } from '@ant-design/icons';
+import { UserOutlined, LoginOutlined, PlusOutlined } from '@ant-design/icons';
 import ChatInterface from './components/ChatInterface';
+import CreateChatModal from './components/CreateChatModal';
 import './App.css';
 
 const { Header, Content } = Layout;
@@ -10,14 +11,33 @@ const { Title, Text } = Typography;
 function App() {
   const [activeCategory, setActiveCategory] = useState('general');
   const [unreadCategories, setUnreadCategories] = useState(new Set());
+  const [customChats, setCustomChats] = useState([]);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
 
-  const categories = [
-    { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос' },
-    { id: 'finance', name: 'Финансы', icon: '💰', description: 'Налоги, отчетность, планирование' },
-    { id: 'marketing', name: 'Маркетинг', icon: '📊', description: 'Продвижение, клиенты, реклама' },
-    { id: 'legal', name: 'Юридическое', icon: '⚖️', description: 'Договоры, права, compliance' },
-    { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление' }
+  const defaultCategories = [
+    { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
+    { id: 'finance', name: 'Финансы', icon: '💰', description: 'Налоги, отчетность, планирование', isDefault: true },
+    { id: 'marketing', name: 'Маркетинг', icon: '📊', description: 'Продвижение, клиенты, реклама', isDefault: true },
+    { id: 'legal', name: 'Юридическое', icon: '⚖️', description: 'Договоры, права, compliance', isDefault: true },
+    { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление', isDefault: true }
   ];
+
+  // Загрузка кастомных чатов из localStorage
+  useEffect(() => {
+    const savedCustomChats = localStorage.getItem('sorilotx-custom-chats');
+    if (savedCustomChats) {
+      setCustomChats(JSON.parse(savedCustomChats));
+    }
+  }, []);
+
+  // Сохранение кастомных чатов в localStorage
+  useEffect(() => {
+    if (customChats.length > 0) {
+      localStorage.setItem('sorilotx-custom-chats', JSON.stringify(customChats));
+    }
+  }, [customChats]);
+
+  const allCategories = [...defaultCategories, ...customChats];
 
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
@@ -27,6 +47,15 @@ function App() {
       newUnread.delete(categoryId);
       setUnreadCategories(newUnread);
     }
+  };
+
+  const handleCreateChat = (newChat) => {
+    setCustomChats(prev => [...prev, newChat]);
+    setActiveCategory(newChat.id);
+  };
+
+  const handleUnreadUpdate = (unreadSet) => {
+    setUnreadCategories(unreadSet);
   };
 
   return (
@@ -62,9 +91,20 @@ function App() {
             </div>
             
             <div className="categories-section">
-              <Text strong className="categories-title">Выберите тему:</Text>
+              <div className="categories-header">
+                <Text strong className="categories-title">Темы для обсуждения:</Text>
+                <Button 
+                  type="primary" 
+                  size="small" 
+                  icon={<PlusOutlined />}
+                  onClick={() => setCreateModalVisible(true)}
+                >
+                  Новая тема
+                </Button>
+              </div>
+              
               <div className="categories-list">
-                {categories.map((category) => (
+                {allCategories.map((category) => (
                   <Badge 
                     key={category.id}
                     dot={unreadCategories.has(category.id)}
@@ -79,7 +119,14 @@ function App() {
                       <div className="category-content">
                         <div className="category-icon">{category.icon}</div>
                         <div className="category-text">
-                          <Text strong className="category-name">{category.name}</Text>
+                          <Text strong className="category-name">
+                            {category.name}
+                            {category.isCustom && (
+                              <Text type="secondary" style={{ fontSize: '10px', marginLeft: '4px' }}>
+                                ●
+                              </Text>
+                            )}
+                          </Text>
                           <Text type="secondary" className="category-description">
                             {category.description}
                           </Text>
@@ -96,11 +143,18 @@ function App() {
           <div className="chat-panel">
             <ChatInterface 
               activeCategory={activeCategory} 
-              categories={categories}
-              onUnreadUpdate={setUnreadCategories}
+              categories={allCategories}
+              onUnreadUpdate={handleUnreadUpdate}
             />
           </div>
         </div>
+
+        {/* Модальное окно создания чата */}
+        <CreateChatModal
+          visible={createModalVisible}
+          onCancel={() => setCreateModalVisible(false)}
+          onCreate={handleCreateChat}
+        />
       </Content>
     </Layout>
   );
