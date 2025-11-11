@@ -1,56 +1,102 @@
-import React from 'react';
-import { Layout, Typography, Space } from 'antd';
-import { RocketOutlined } from '@ant-design/icons';
-import ChatInterface from './components/ChatInterface';
+import React, { useState } from 'react';
+import { Layout, Typography, Button, Space, Input, Card, Row, Col } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
+import ChatModal from './components/ChatModal';
 import './App.css';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
+const { Search } = Input;
 
 function App() {
+  const [chatModalVisible, setChatModalVisible] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('');
+
+  const handleCategoryClick = (category) => {
+    setSelectedCategory(category);
+    setChatModalVisible(true);
+  };
+
+  const handleSearch = (value) => {
+    if (value.trim()) {
+      setSelectedCategory('');
+      setChatModalVisible(true);
+    }
+  };
+
+  const categories = [
+    { name: 'Финансы', icon: '💰' },
+    { name: 'Маркетинг', icon: '📊' },
+    { name: 'Юридическое', icon: '⚖️' },
+    { name: 'HR', icon: '👥' }
+  ];
+
   return (
     <Layout className="app-layout">
+      {/* Хедер с навигацией */}
       <Header className="app-header">
-        <Space align="center" style={{ width: '100%', justifyContent: 'center' }}>
-          <RocketOutlined style={{ fontSize: '24px', color: 'white' }} />
-          <Title level={3} style={{ color: 'white', margin: 0 }}>
-            Альфа-Будущее
-          </Title>
-        </Space>
+        <div className="header-content">
+          <div className="logo-section">
+            <Title level={2} className="logo-text">СорilotX</Title>
+          </div>
+          <div className="auth-section">
+            <Space size="middle">
+              <Button type="text" className="auth-btn">
+                Зарегистрироваться
+              </Button>
+              <Button type="primary" className="auth-btn">
+                Войти
+              </Button>
+            </Space>
+          </div>
+        </div>
       </Header>
       
+      {/* Основной контент */}
       <Content className="app-content">
         <div className="hero-section">
-          <Title level={2}>ИИ-помощник для вашего бизнеса</Title>
-          <Text type="secondary" style={{ fontSize: '16px' }}>
-            Получайте "умные" ответы на вопросы о финансах и управлении бизнесом
-          </Text>
+          <Title level={1} className="hero-title">
+            Привет! Чем я могу помочь?
+          </Title>
+          
+          {/* Поле поиска/ввода */}
+          <div className="search-section">
+            <Search
+              placeholder="Ask something..."
+              enterButton={<SearchOutlined />}
+              size="large"
+              className="main-search"
+              onSearch={handleSearch}
+            />
+          </div>
+
+          {/* Категории */}
+          <div className="categories-section">
+            <Row gutter={[16, 16]} justify="center">
+              {categories.map((category, index) => (
+                <Col xs={12} sm={6} key={category.name}>
+                  <Card 
+                    className="category-card" 
+                    hoverable
+                    onClick={() => handleCategoryClick(category.name)}
+                  >
+                    <div className="category-content">
+                      <div className="category-icon">{category.icon}</div>
+                      <Text strong>{category.name}</Text>
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          </div>
         </div>
-        
-        <ChatInterface />
-        
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <Text strong>Бизнес-консультации</Text>
-            <Text type="secondary">Помощь в принятии управленческих решений</Text>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <Text strong>Юридические вопросы</Text>
-            <Text type="secondary">Ответы на правовые вопросы бизнеса</Text>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <Text strong>Финансовый анализ</Text>
-            <Text type="secondary">Анализ финансовых показателей</Text>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon"></div>
-            <Text strong>Маркетинг</Text>
-            <Text type="secondary">Советы по продвижению бизнеса</Text>
-          </div>
-        </div>
+
+        {/* Модальное окно чата */}
+        <ChatModal
+          visible={chatModalVisible}
+          onClose={() => setChatModalVisible(false)}
+          category={selectedCategory}
+        />
       </Content>
     </Layout>
   );
