@@ -10,6 +10,9 @@ import './App.css';
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
+// Хелпер для user-specific кастомных чатов
+const getUserCustomChatsKey = (userId) => `sorilotx-custom-chats-${userId}`;
+
 function App() {
   const [activeCategory, setActiveCategory] = useState('general');
   const [unreadCategories, setUnreadCategories] = useState(new Set());
@@ -28,18 +31,27 @@ function App() {
 
   // Загрузка кастомных чатов из localStorage
   useEffect(() => {
-    const savedCustomChats = localStorage.getItem('sorilotx-custom-chats');
+    if (!currentUser) {
+      setCustomChats([]);
+      return;
+    }
+
+    const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
+    const savedCustomChats = localStorage.getItem(userCustomChatsKey);
     if (savedCustomChats) {
       setCustomChats(JSON.parse(savedCustomChats));
+    } else {
+      setCustomChats([]);
     }
-  }, []);
+  }, [currentUser]);
 
   // Сохранение кастомных чатов в localStorage
   useEffect(() => {
-    if (customChats.length > 0) {
-      localStorage.setItem('sorilotx-custom-chats', JSON.stringify(customChats));
+    if (customChats.length > 0 && currentUser) {
+      const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
+      localStorage.setItem(userCustomChatsKey, JSON.stringify(customChats));
     }
-  }, [customChats]);
+  }, [customChats, currentUser]);
 
   const allCategories = [...defaultCategories, ...customChats];
 
