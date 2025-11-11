@@ -5,8 +5,8 @@ import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
 import AuthModal from './components/AuthModal';
-import './App.css';
 import DBCleaner from './utils/DBCleaner';
+import './App.css';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -32,17 +32,14 @@ function App() {
 
   // Загрузка кастомных чатов из localStorage
   useEffect(() => {
-    if (!currentUser) {
-      setCustomChats([]);
-      return;
-    }
+    if (!currentUser) return; // Просто не загружаем если нет пользователя
 
     const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
     const savedCustomChats = localStorage.getItem(userCustomChatsKey);
     if (savedCustomChats) {
       setCustomChats(JSON.parse(savedCustomChats));
     } else {
-      setCustomChats([]);
+      setCustomChats([]); // Только если действительно нет данных
     }
   }, [currentUser]);
 
@@ -191,8 +188,10 @@ function App() {
           visible={authModalVisible}
           onCancel={() => setAuthModalVisible(false)}
         />
+
+        {/* Кнопка очистки БД */}
+        <DBCleaner />
       </Content>
-      <DBCleaner />
     </Layout>
   );
 }

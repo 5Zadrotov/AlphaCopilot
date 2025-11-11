@@ -20,10 +20,7 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
 
   // Загрузка истории из localStorage
   useEffect(() => {
-    if (!currentUser) {
-      setMessages({});
-      return;
-    }
+    if (!currentUser) return; // Просто не загружаем данные если нет пользователя
 
     const userChatsKey = getUserChatsKey(currentUser.id);
     const savedMessages = localStorage.getItem(userChatsKey);
@@ -38,6 +35,9 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
         }));
       });
       setMessages(parsedMessages);
+    } else {
+      // Если нет сохраненных данных, инициализируем пустой объект
+      setMessages({});
     }
 
     if (savedUnread) {
