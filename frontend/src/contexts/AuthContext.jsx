@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
     
     setCurrentUser(newUser);
     localStorage.setItem('sorilotx-current-user', JSON.stringify(newUser));
-    message.success('Регистрация прошла успешно!');
+    message.success('Регистрация прошла успешно! Начните новый диалог!');
     return true;
   };
 
