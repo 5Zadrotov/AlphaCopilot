@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Interfaces;
-using WebApp.Models;
+using WebApp.Models.DbModels;
 
 namespace WebApp.Controllers
 {

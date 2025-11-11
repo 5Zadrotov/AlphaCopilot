@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Interfaces;
-using WebApp.Models;
+using WebApp.Models.Dto;
 
 namespace WebApp.Controllers
 {
@@ -18,7 +18,7 @@ namespace WebApp.Controllers
 
             var authResponse = _authService.Authenticate(request.Username, request.Password);
 
-            if (authResponse == null)
+            if (authResponse is null)
                 return Unauthorized(new { message = "Неверное имя пользователя или пароль" });
 
             return Ok(authResponse);

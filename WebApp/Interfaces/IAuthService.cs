@@ -1,4 +1,4 @@
-﻿using WebApp.Models;
+﻿using WebApp.Models.Dto;
 
 namespace WebApp.Interfaces
 {
