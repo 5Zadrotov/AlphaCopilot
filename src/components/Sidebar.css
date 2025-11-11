@@ -1,5 +1,11 @@
-.sidebar {
-  height: 70vh;
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.examples-card {
+  height: 50vh;
   overflow-y: auto;
 }
 
@@ -42,8 +48,11 @@
 
 
 @media (max-width: 768px) {
-  .sidebar {
+  .examples-card {
     height: auto;
-    margin-bottom: 16px;
+  }
+  
+  .sidebar-container {
+    gap: 12px;
   }
 }
