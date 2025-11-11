@@ -1,4 +1,4 @@
 ﻿.vs
 .github
-WebApp/bin
-WebApp/obj
+WebApp/bin/
+WebApp/obj/
