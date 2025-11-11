@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Typography, Button, Space, Card, Row, Col, Divider } from 'antd';
+import { Layout, Typography, Button, Space, Card, Row, Col, Divider, Badge } from 'antd';
 import { UserOutlined, LoginOutlined } from '@ant-design/icons';
 import ChatInterface from './components/ChatInterface';
 import './App.css';
@@ -9,6 +9,7 @@ const { Title, Text } = Typography;
 
 function App() {
   const [activeCategory, setActiveCategory] = useState('general');
+  const [unreadCategories, setUnreadCategories] = useState(new Set());
 
   const categories = [
     { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос' },
@@ -17,6 +18,16 @@ function App() {
     { id: 'legal', name: 'Юридическое', icon: '⚖️', description: 'Договоры, права, compliance' },
     { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление' }
   ];
+
+  const handleCategoryClick = (categoryId) => {
+    setActiveCategory(categoryId);
+    // Убираем категорию из непрочитанных при клике
+    if (unreadCategories.has(categoryId)) {
+      const newUnread = new Set(unreadCategories);
+      newUnread.delete(categoryId);
+      setUnreadCategories(newUnread);
+    }
+  };
 
   return (
     <Layout className="app-layout">
@@ -54,22 +65,28 @@ function App() {
               <Text strong className="categories-title">Выберите тему:</Text>
               <div className="categories-list">
                 {categories.map((category) => (
-                  <Card 
+                  <Badge 
                     key={category.id}
-                    className={`category-card ${activeCategory === category.id ? 'active' : ''}`}
-                    hoverable
-                    onClick={() => setActiveCategory(category.id)}
+                    dot={unreadCategories.has(category.id)}
+                    offset={[-5, 5]}
+                    color="red"
                   >
-                    <div className="category-content">
-                      <div className="category-icon">{category.icon}</div>
-                      <div className="category-text">
-                        <Text strong className="category-name">{category.name}</Text>
-                        <Text type="secondary" className="category-description">
-                          {category.description}
-                        </Text>
+                    <Card 
+                      className={`category-card ${activeCategory === category.id ? 'active' : ''}`}
+                      hoverable
+                      onClick={() => handleCategoryClick(category.id)}
+                    >
+                      <div className="category-content">
+                        <div className="category-icon">{category.icon}</div>
+                        <div className="category-text">
+                          <Text strong className="category-name">{category.name}</Text>
+                          <Text type="secondary" className="category-description">
+                            {category.description}
+                          </Text>
+                        </div>
                       </div>
-                    </div>
-                  </Card>
+                    </Card>
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -77,7 +94,11 @@ function App() {
 
           {/* Правая панель с чатом */}
           <div className="chat-panel">
-            <ChatInterface activeCategory={activeCategory} categories={categories} />
+            <ChatInterface 
+              activeCategory={activeCategory} 
+              categories={categories}
+              onUnreadUpdate={setUnreadCategories}
+            />
           </div>
         </div>
       </Content>
