@@ -1,34 +1,21 @@
 import React, { useState } from 'react';
-import { Layout, Typography, Button, Space, Input, Card, Row, Col } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
-import ChatModal from './components/ChatModal';
+import { Layout, Typography, Button, Space, Card, Row, Col, Divider } from 'antd';
+import { UserOutlined, LoginOutlined } from '@ant-design/icons';
+import ChatInterface from './components/ChatInterface';
 import './App.css';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
-const { Search } = Input;
 
 function App() {
-  const [chatModalVisible, setChatModalVisible] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('');
-
-  const handleCategoryClick = (category) => {
-    setSelectedCategory(category);
-    setChatModalVisible(true);
-  };
-
-  const handleSearch = (value) => {
-    if (value.trim()) {
-      setSelectedCategory('');
-      setChatModalVisible(true);
-    }
-  };
+  const [activeCategory, setActiveCategory] = useState('general');
 
   const categories = [
-    { name: 'Финансы', icon: '💰' },
-    { name: 'Маркетинг', icon: '📊' },
-    { name: 'Юридическое', icon: '⚖️' },
-    { name: 'HR', icon: '👥' }
+    { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос' },
+    { id: 'finance', name: 'Финансы', icon: '💰', description: 'Налоги, отчетность, планирование' },
+    { id: 'marketing', name: 'Маркетинг', icon: '📊', description: 'Продвижение, клиенты, реклама' },
+    { id: 'legal', name: 'Юридическое', icon: '⚖️', description: 'Договоры, права, compliance' },
+    { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление' }
   ];
 
   return (
@@ -41,10 +28,10 @@ function App() {
           </div>
           <div className="auth-section">
             <Space size="middle">
-              <Button type="text" className="auth-btn">
+              <Button type="text" className="auth-btn register-btn">
                 Зарегистрироваться
               </Button>
-              <Button type="primary" className="auth-btn">
+              <Button type="primary" className="auth-btn login-btn">
                 Войти
               </Button>
             </Space>
@@ -54,49 +41,45 @@ function App() {
       
       {/* Основной контент */}
       <Content className="app-content">
-        <div className="hero-section">
-          <Title level={1} className="hero-title">
-            Привет! Чем я могу помочь?
-          </Title>
-          
-          {/* Поле поиска/ввода */}
-          <div className="search-section">
-            <Search
-              placeholder="Ask something..."
-              enterButton={<SearchOutlined />}
-              size="large"
-              className="main-search"
-              onSearch={handleSearch}
-            />
-          </div>
-
-          {/* Категории */}
-          <div className="categories-section">
-            <Row gutter={[16, 16]} justify="center">
-              {categories.map((category, index) => (
-                <Col xs={12} sm={6} key={category.name}>
+        <div className="main-container">
+          {/* Левая панель с категориями */}
+          <div className="sidebar">
+            <div className="welcome-section">
+              <Title level={3} className="welcome-title">
+                Привет! Чем я могу помочь?
+              </Title>
+            </div>
+            
+            <div className="categories-section">
+              <Text strong className="categories-title">Выберите тему:</Text>
+              <div className="categories-list">
+                {categories.map((category) => (
                   <Card 
-                    className="category-card" 
+                    key={category.id}
+                    className={`category-card ${activeCategory === category.id ? 'active' : ''}`}
                     hoverable
-                    onClick={() => handleCategoryClick(category.name)}
+                    onClick={() => setActiveCategory(category.id)}
                   >
                     <div className="category-content">
                       <div className="category-icon">{category.icon}</div>
-                      <Text strong>{category.name}</Text>
+                      <div className="category-text">
+                        <Text strong className="category-name">{category.name}</Text>
+                        <Text type="secondary" className="category-description">
+                          {category.description}
+                        </Text>
+                      </div>
                     </div>
                   </Card>
-                </Col>
-              ))}
-            </Row>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Правая панель с чатом */}
+          <div className="chat-panel">
+            <ChatInterface activeCategory={activeCategory} categories={categories} />
           </div>
         </div>
-
-        {/* Модальное окно чата */}
-        <ChatModal
-          visible={chatModalVisible}
-          onClose={() => setChatModalVisible(false)}
-          category={selectedCategory}
-        />
       </Content>
     </Layout>
   );
