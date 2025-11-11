@@ -5,9 +5,12 @@ import FileUpload from './FileUpload';
 import './ChatInterface.css';
 
 const { TextArea } = Input;
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
-const ChatInterface = ({ activeCategory, categories }) => {
+// Хелперы для работы с user-specific данными
+const getUserChatsKey = (userId) => `sorilotx-chat-history-${userId}`;
+
+const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser }) => {
   const [messages, setMessages] = useState({});
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +20,13 @@ const ChatInterface = ({ activeCategory, categories }) => {
 
   // Загрузка истории из localStorage
   useEffect(() => {
-    const savedMessages = localStorage.getItem('sorilotx-chat-history');
+    if (!currentUser) {
+      setMessages({});
+      return;
+    }
+
+    const userChatsKey = getUserChatsKey(currentUser.id);
+    const savedMessages = localStorage.getItem(userChatsKey);
     const savedUnread = localStorage.getItem('sorilotx-unread-categories');
     
     if (savedMessages) {
@@ -34,14 +43,15 @@ const ChatInterface = ({ activeCategory, categories }) => {
     if (savedUnread) {
       setUnreadCategories(new Set(JSON.parse(savedUnread)));
     }
-  }, []);
+  }, [currentUser]);
 
   // Сохранение истории в localStorage
   useEffect(() => {
-    if (Object.keys(messages).length > 0) {
-      localStorage.setItem('sorilotx-chat-history', JSON.stringify(messages));
+    if (Object.keys(messages).length > 0 && currentUser) {
+      const userChatsKey = getUserChatsKey(currentUser.id);
+      localStorage.setItem(userChatsKey, JSON.stringify(messages));
     }
-  }, [messages]);
+  }, [messages, currentUser]);
 
   // Помечаем категорию как прочитанную при активации
   useEffect(() => {
@@ -63,6 +73,8 @@ const ChatInterface = ({ activeCategory, categories }) => {
 
   // Инициализация категории если её нет
   useEffect(() => {
+    if (!currentUser) return;
+    
     if (!messages[activeCategory]) {
       const category = categories.find(cat => cat.id === activeCategory);
       const welcomeMessage = {
@@ -76,7 +88,7 @@ const ChatInterface = ({ activeCategory, categories }) => {
         [activeCategory]: [welcomeMessage]
       }));
     }
-  }, [activeCategory, categories, messages]);
+  }, [activeCategory, categories, messages, currentUser]);
 
   const getWelcomeMessage = (categoryId, categoryName) => {
     const welcomeMessages = {
