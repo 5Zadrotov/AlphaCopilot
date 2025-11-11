@@ -106,3 +106,51 @@
     align-self: flex-end;
   }
 }
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.message-sender {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.user-message .message-sender {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ai-message .message-sender {
+  color: #666;
+}
+
+.message-actions-btn {
+  opacity: 0.6;
+  color: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.message-actions-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.user-message .message-actions-btn {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ai-message .message-actions-btn {
+  color: #666;
+}
+
+/* Убедимся, что сообщения хорошо выглядят */
+.message {
+  position: relative;
+  transition: background-color 0.2s ease;
+}
+
+.message:hover {
+  background: rgba(0, 0, 0, 0.02);
+}

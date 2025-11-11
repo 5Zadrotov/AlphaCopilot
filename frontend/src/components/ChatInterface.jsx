@@ -1,12 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input, Button, Avatar, List, Typography, Space, Tag, Divider, Collapse } from 'antd';
-import { SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined } from '@ant-design/icons';
+import { Input, Button, Avatar, List, Typography, Space, Tag, Divider, Dropdown, message } from 'antd';
+import { SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined, MoreOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import FileUpload from './FileUpload';
 import './ChatInterface.css';
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
-const { Panel } = Collapse;
 
 const ChatInterface = ({ activeCategory, categories }) => {
   const [messages, setMessages] = useState({});
@@ -88,6 +87,72 @@ const ChatInterface = ({ activeCategory, categories }) => {
       hr: `Добро пожаловать в раздел "${categoryName}"! Здесь я могу помочь с вопросами найма, управления персоналом, мотивации сотрудников и HR-процессами. Что вас интересует?`
     };
     return welcomeMessages[categoryId] || welcomeMessages.general;
+  };
+
+  // Функция для удаления сообщения и всего что ниже
+  const handleDeleteMessage = (messageId) => {
+    setMessages(prev => {
+      const categoryMessages = prev[activeCategory] || [];
+      const index = categoryMessages.findIndex(msg => msg.id === messageId);
+      
+      if (index !== -1) {
+        const newMessages = {
+          ...prev,
+          [activeCategory]: categoryMessages.slice(0, index)
+        };
+        return newMessages;
+      }
+      return prev;
+    });
+    message.success('Сообщение и последующий диалог удалены');
+  };
+
+  // Функция для копирования текста
+  const handleCopyMessage = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success('Текст скопирован');
+    } catch (err) {
+      message.error('Не удалось скопировать текст');
+    }
+  };
+
+  // Компонент действий для сообщения
+  const MessageActions = ({ message }) => {
+    const menuItems = [
+      {
+        key: 'copy',
+        label: 'Копировать текст',
+        icon: <CopyOutlined />,
+        onClick: () => handleCopyMessage(message.text)
+      }
+    ];
+
+    // Только для пользовательских сообщений добавляем удаление
+    if (message.sender === 'user') {
+      menuItems.push({
+        key: 'delete',
+        label: 'Удалить и очистить диалог ниже',
+        icon: <DeleteOutlined />,
+        danger: true,
+        onClick: () => handleDeleteMessage(message.id)
+      });
+    }
+
+    return (
+      <Dropdown
+        menu={{ items: menuItems }}
+        trigger={['click']}
+        placement="bottomRight"
+      >
+        <Button 
+          type="text" 
+          icon={<MoreOutlined />} 
+          size="small"
+          className="message-actions-btn"
+        />
+      </Dropdown>
+    );
   };
 
   const handleFilesUpload = (files) => {
@@ -271,7 +336,13 @@ const ChatInterface = ({ activeCategory, categories }) => {
                     flexShrink: 0
                   }}
                 />
-                <div className="message-content">
+                <div className="message-content" style={{ flex: 1 }}>
+                  <div className="message-header">
+                    <Text strong className="message-sender">
+                      {message.sender === 'bot' ? 'SoriPilotX' : 'Вы'}
+                    </Text>
+                    <MessageActions message={message} />
+                  </div>
                   <Text className="message-text">{message.text}</Text>
                   {message.files && (
                     <div className="file-attachments">
