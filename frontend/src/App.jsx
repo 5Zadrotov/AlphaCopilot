@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button, Space, Card, Row, Col, Divider, Badge } from 'antd';
-import { UserOutlined, LoginOutlined, PlusOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Space, Card, Badge } from 'antd';
+import { PlusOutlined, LogoutOutlined } from '@ant-design/icons';
+import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
+import AuthModal from './components/AuthModal';
 import './App.css';
 
 const { Header, Content } = Layout;
@@ -13,6 +15,8 @@ function App() {
   const [unreadCategories, setUnreadCategories] = useState(new Set());
   const [customChats, setCustomChats] = useState([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+  const { currentUser, logout } = useAuth();
 
   const defaultCategories = [
     { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
@@ -68,12 +72,23 @@ function App() {
           </div>
           <div className="auth-section">
             <Space size="middle">
-              <Button type="text" className="auth-btn register-btn">
-                Зарегистрироваться
-              </Button>
-              <Button type="primary" className="auth-btn login-btn">
-                Войти
-              </Button>
+              {currentUser ? (
+                <>
+                  <Text className="user-welcome">Привет, {currentUser.username}!</Text>
+                  <Button type="text" icon={<LogoutOutlined />} onClick={logout}>
+                    Выйти
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button type="text" onClick={() => setAuthModalVisible(true)}>
+                    Зарегистрироваться
+                  </Button>
+                  <Button type="primary" onClick={() => setAuthModalVisible(true)}>
+                    Войти
+                  </Button>
+                </>
+              )}
             </Space>
           </div>
         </div>
@@ -86,7 +101,7 @@ function App() {
           <div className="sidebar">
             <div className="welcome-section">
               <Title level={3} className="welcome-title">
-                Привет! Чем я могу помочь?
+                {currentUser ? `Привет, ${currentUser.username}!` : 'Привет!'} Чем я могу помочь?
               </Title>
             </div>
             
@@ -98,6 +113,7 @@ function App() {
                   size="small" 
                   icon={<PlusOutlined />}
                   onClick={() => setCreateModalVisible(true)}
+                  disabled={!currentUser}
                 >
                   Новая тема
                 </Button>
@@ -145,6 +161,7 @@ function App() {
               activeCategory={activeCategory} 
               categories={allCategories}
               onUnreadUpdate={handleUnreadUpdate}
+              currentUser={currentUser}
             />
           </div>
         </div>
@@ -154,6 +171,12 @@ function App() {
           visible={createModalVisible}
           onCancel={() => setCreateModalVisible(false)}
           onCreate={handleCreateChat}
+        />
+
+        {/* Модальное окно авторизации */}
+        <AuthModal
+          visible={authModalVisible}
+          onCancel={() => setAuthModalVisible(false)}
         />
       </Content>
     </Layout>
