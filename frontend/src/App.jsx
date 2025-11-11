@@ -6,6 +6,7 @@ import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
 import AuthModal from './components/AuthModal';
 import './App.css';
+import DBCleaner from './utils/DBCleaner';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -191,6 +192,7 @@ function App() {
           onCancel={() => setAuthModalVisible(false)}
         />
       </Content>
+      <DBCleaner />
     </Layout>
   );
 }
