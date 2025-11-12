@@ -9,29 +9,25 @@ internal partial class Program
 {
     private static void Main(string[] args)
     {
-        System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls13;
-
         var builder = WebApplication.CreateBuilder(args);
 
-        // Загружаем конфигурацию из папки Secrets
         var secretsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Secrets");
         builder.Configuration.AddJsonFile(
             Path.Combine(secretsDirectory, "appsettings.json"),
             optional: false,
             reloadOnChange: true);
 
-        // Добавляем сервисы
+        // Add services to the container.
         builder.Services.AddControllers();
 
-        // Конфигурация JWT
+        // JWT Configuration
         var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]!;
         var jwtTokenExpirationHours = int.Parse(builder.Configuration["Jwt:TokenExpirationHours"]!);
 
         builder.Services.AddSingleton<IAuthService, AuthService>();
-        builder.Services.AddHttpClient();
-        builder.Services.AddScoped<IAiService, OpenRouterService>();
+        //builder.Services.AddScoped<IAiService, MockAiService>();
 
-        // Настройка аутентификации
+        // Add authentication
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -50,20 +46,20 @@ internal partial class Program
             };
         });
 
+        // Add endpoints for authorization
         builder.Services.AddAuthorization();
-        builder.Services.AddEndpointsApiExplorer();
 
-        // Настройка Swagger с поддержкой авторизации
+        // Configure Swagger - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ AddSwaggerGen!
+        builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "Alpha Business Assistant API",
                 Version = "v1",
-                Description = "API для ассистента малого бизнеса с поддержкой JWT аутентификации"
+                Description = "API пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ JWT пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
             });
 
-            // Добавляем поддержку JWT в Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -91,21 +87,25 @@ internal partial class Program
 
         var app = builder.Build();
 
-        // Конфигурация HTTP запросов
+        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Alpha Business Assistant API V1");
-                c.RoutePrefix = string.Empty; // Swagger будет доступен на корневом пути
+                c.RoutePrefix = string.Empty; // Swagger пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
             });
         }
 
-        app.UseHttpsRedirection();
+        // app.UseHttpsRedirection(); // РћС‚РєР»СЋС‡РµРЅРѕ РґР»СЏ Docker
+
+        // Authentication & Authorization middleware
         app.UseAuthentication();
         app.UseAuthorization();
+
         app.MapControllers();
+
         app.Run();
     }
 }

@@ -1,0 +1,91 @@
+### AlphaCopilot API Requests for Insomnia/Postman
+
+### Variables
+@baseUrl = http://localhost:8080
+@token = YOUR_JWT_TOKEN_HERE
+
+### 1. Register User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpass123",
+  "email": "test@example.com"
+}
+
+### 2. Login User
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testpass123"
+}
+
+### 3. Send Chat Message (requires JWT token)
+POST {{baseUrl}}/api/chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "content": "Привет! Как дела?",
+  "category": "Общее"
+}
+
+### 4. Send Business Chat Message
+POST {{baseUrl}}/api/chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "content": "Помоги составить бизнес-план для стартапа",
+  "category": "Бизнес"
+}
+
+### 5. Get Chat History (requires JWT token)
+GET {{baseUrl}}/api/chat/history
+Authorization: Bearer {{token}}
+
+### 6. Health Check (Swagger UI)
+GET {{baseUrl}}/
+
+### Test Scenarios:
+
+### Invalid Login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "wronguser",
+  "password": "wrongpass"
+}
+
+### Empty Message
+POST {{baseUrl}}/api/chat/message
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "content": "",
+  "category": "Общее"
+}
+
+### Register Duplicate User
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "newpass123",
+  "email": "newemail@example.com"
+}
+
+### Chat without Authorization
+POST {{baseUrl}}/api/chat/message
+Content-Type: application/json
+
+{
+  "content": "Тест без токена",
+  "category": "Общее"
+}
