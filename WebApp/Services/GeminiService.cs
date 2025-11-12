@@ -1,4 +1,7 @@
 ﻿using Google.GenAI;
+using Google.GenAI.Types;
+using System;
+using System.Threading.Tasks;
 using WebApp.Interfaces;
 
 namespace WebApp.Services
@@ -10,6 +13,8 @@ namespace WebApp.Services
 
         public GeminiService(IConfiguration configuration)
         {
+            //System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls13;
+
             _configuration = configuration;
 
             //получаем API ключ из appsettings.json
@@ -17,30 +22,48 @@ namespace WebApp.Services
             if (string.IsNullOrEmpty(apiKey))
                 throw new Exception("Gemini API key не настроен в appsettings.json");
 
+
             _client = new Client(apiKey: apiKey);
         }
 
         public async Task<string> GetResponseAsync(string userInput, string category, Guid userId)
         {
-            try
-            {
-                //создаем контекстный промпт
-                var prompt = BuildPrompt(userInput, category);
+            var prompt = BuildPrompt(userInput, category);
+            const int maxAttempts = 3;
 
-                //делаем запрос к Gemini
-                var response = await _client.Models.GenerateContentAsync(
-                    model: "gemini-2.5-flash",
-                    contents: prompt
-                );
 
-                //получаем текст ответа
-                var result = response.Candidates[0].Content.Parts[0].Text;
-                return result is not null ? result : "Извините, возникла ошибка при обработке вашего запроса: {ex.Message}. Пожалуйста, попробуйте позже.";
-            }
-            catch (Exception ex)
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                return $"Извините, возникла ошибка при обработке вашего запроса: {ex.Message}. Пожалуйста, попробуйте позже.";
+                try
+                {
+                    //тут вылетает HttpRequestException
+                    var response = await _client.Models.GenerateContentAsync(
+                        model: "gemini-1.5-pro",
+                        contents: prompt
+                    );
+
+                    if (response?.Candidates?.Count > 0 &&
+                        response.Candidates[0]?.Content?.Parts?.Count > 0)
+                    {
+                        return response.Candidates[0].Content.Parts[0].Text;
+                    }
+
+                    return "Извините, я не смог сформировать ответ на ваш вопрос.";
+                }
+                catch (HttpRequestException hre) when (attempt < maxAttempts)
+                {
+                    Console.WriteLine($"Ошибка: {hre.Message}");
+                    await Task.Delay(500 * attempt);
+                    continue;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Ошибка: {e.Message}");
+                    return $"Извините, возникла ошибка: {e.Message}";
+                }
             }
+
+            return "Извините, возникла повторяющаяся ошибка при обращении к сервису.";
         }
 
         private static string BuildPrompt(string userInput, string category)

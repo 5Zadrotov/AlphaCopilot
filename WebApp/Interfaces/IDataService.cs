@@ -7,8 +7,8 @@ namespace WebApp.Interfaces
     {
         Task<User> GetUserByEmailAsync(string email);
         Task<bool> CreateUserAsync(User user);
-        Task<ChatSession> CreateChatSessionAsync(Guid userId, string businessType);
-        Task<ChatSession> GetChatSessionAsync(Guid sessionId, Guid userId);
+        Task<Models.DbModels.ChatSession> CreateChatSessionAsync(Guid userId, string businessType);
+        Task<Models.DbModels.ChatSession> GetChatSessionAsync(Guid sessionId, Guid userId);
         Task SaveChatMessageAsync(ChatMessage message);
         bool UserExists(string email);
     }

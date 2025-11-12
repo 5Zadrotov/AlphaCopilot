@@ -9,6 +9,8 @@ internal partial class Program
 {
     private static void Main(string[] args)
     {
+        System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls13;
+
         var builder = WebApplication.CreateBuilder(args);
 
         // Загружаем конфигурацию из папки Secrets
@@ -26,7 +28,8 @@ internal partial class Program
         var jwtTokenExpirationHours = int.Parse(builder.Configuration["Jwt:TokenExpirationHours"]!);
 
         builder.Services.AddSingleton<IAuthService, AuthService>();
-        builder.Services.AddScoped<IAiService, GeminiService>();
+        builder.Services.AddHttpClient();
+        builder.Services.AddScoped<IAiService, OpenRouterService>();
 
         // Настройка аутентификации
         builder.Services.AddAuthentication(options =>

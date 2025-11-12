@@ -12,7 +12,7 @@ namespace WebApp.Controllers
     public class ChatController(IAiService aiService) : ControllerBase
     {
         private readonly IAiService _aiService = aiService;
-        private static readonly List<ChatMessage> _chatHistory = [];
+        private static readonly Dictionary<Guid, List<ChatMessage>> _sessions = new();
 
         [HttpPost("message")]
         public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
@@ -20,11 +20,21 @@ namespace WebApp.Controllers
             if (string.IsNullOrWhiteSpace(request.Content))
                 return BadRequest("Сообщение не может быть пустым");
 
-            // Получаем данные из токена
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 return Unauthorized("Неверный формат идентификатора пользователя");
+            }
+
+            //eсли sessionId не указан или пустой - создаем новую сессию
+            if (string.IsNullOrEmpty(request.SessionId) || !Guid.TryParse(request.SessionId, out Guid sessionId))
+            {
+                sessionId = Guid.NewGuid();
+                _sessions[sessionId] = new List<ChatMessage>();
+            }
+            else if (!_sessions.ContainsKey(sessionId))
+            {
+                _sessions[sessionId] = new List<ChatMessage>();
             }
 
             var userMessage = new ChatMessage
@@ -36,11 +46,10 @@ namespace WebApp.Controllers
                 Category = request.Category,
                 Timestamp = DateTime.UtcNow
             };
-            _chatHistory.Add(userMessage);
+            _sessions[sessionId].Add(userMessage);
 
             try
             {
-                // Получаем ответ от ИИ
                 var aiResponse = await _aiService.GetResponseAsync(request.Content, request.Category, userId);
 
                 var aiMessage = new ChatMessage
@@ -52,10 +61,11 @@ namespace WebApp.Controllers
                     Category = request.Category,
                     Timestamp = DateTime.UtcNow
                 };
-                _chatHistory.Add(aiMessage);
+                _sessions[sessionId].Add(aiMessage);
 
                 return Ok(new
                 {
+                    sessionId = sessionId.ToString(),
                     userMessage,
                     aiMessage
                 });
@@ -67,7 +77,7 @@ namespace WebApp.Controllers
         }
 
         [HttpGet("history")]
-        public IActionResult GetHistory()
+        public IActionResult GetHistory([FromQuery] string? sessionId = null)
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
@@ -75,12 +85,37 @@ namespace WebApp.Controllers
                 return Unauthorized("Неверный формат идентификатора пользователя");
             }
 
-            var userHistory = _chatHistory
-                .Where(m => m.UserId == userId)
-                .OrderBy(m => m.Timestamp)
-                .ToList();
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                // Возвращаем последнюю активную сессию или создаем новую
+                var allSessions = _sessions
+                    .Where(s => s.Value.Any(m => m.UserId == userId))
+                    .OrderByDescending(s => s.Value.LastOrDefault()?.Timestamp)
+                    .FirstOrDefault();
 
-            return Ok(userHistory);
+                if (allSessions.Key == Guid.Empty)
+                {
+                    var newSessionId = Guid.NewGuid();
+                    _sessions[newSessionId] = new List<ChatMessage>();
+                    return Ok(new { sessionId = newSessionId.ToString(), messages = new List<ChatMessage>() });
+                }
+
+                return Ok(new
+                {
+                    sessionId = allSessions.Key.ToString(),
+                    messages = allSessions.Value.Where(m => m.UserId == userId).OrderBy(m => m.Timestamp).ToList()
+                });
+            }
+            else if (Guid.TryParse(sessionId, out var guid) && _sessions.TryGetValue(guid, out var messages))
+            {
+                return Ok(new
+                {
+                    sessionId,
+                    messages = messages.Where(m => m.UserId == userId).OrderBy(m => m.Timestamp).ToList()
+                });
+            }
+
+            return NotFound("Сессия не найдена");
         }
     }
 }

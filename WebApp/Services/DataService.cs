@@ -28,7 +28,7 @@ namespace WebApp.Services
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 Title = $"Сессия для {businessType}",
-                CreatedAt = DateTime.UtcNow,
+                StartedAt = DateTime.UtcNow,
                 LastActivity = DateTime.UtcNow
             });
         }
@@ -40,7 +40,7 @@ namespace WebApp.Services
                 Id = sessionId,
                 UserId = userId,
                 Title = "Тестовая сессия",
-                CreatedAt = DateTime.UtcNow,
+                StartedAt = DateTime.UtcNow,
                 LastActivity = DateTime.UtcNow
             });
         }
