@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Input, Button, Avatar, List, Typography, Space, Tag, Divider, Dropdown, message } from 'antd';
-import { SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined, MoreOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
+import { AudioOutlined, SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined, MoreOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import FileUpload from './FileUpload';
+import VoiceMode from './VoiceMode';
 import './ChatInterface.css';
 
 const { TextArea } = Input;
@@ -16,6 +17,7 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
   const [loading, setLoading] = useState(false);
   const [unreadCategories, setUnreadCategories] = useState(new Set());
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const[showVoiceMode, setShowVoiceMode] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Загрузка истории из localStorage
@@ -197,6 +199,37 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
         [activeCategory]: [...(prev[activeCategory] || []), analysisMessage]
       }));
     }, 2000);
+  };
+  //Отправка ГС
+  const handleAudioUpload = (audioFile) => {
+    const audioURL = URL.createObjectURL(audioFile);
+    const audioMessage = {
+      id: Date.now(),
+      text: 'Голосовое сообщение',
+      sender: 'user',
+      timestamp: new Date(),
+      audio: audioFile,
+      audioURL: audioURL
+    };
+    setMessages(prev => ({
+      ...prev,
+      [activeCategory]: [...(prev[activeCategory] || []), audioMessage]
+    }));
+
+    setShowVoiceMode(false);
+
+    setTimeout(() => {
+      const botResponse = {
+        id: Date.now() + 1,
+        text: 'Я получил ваше голосовое сообщение. Голос распознан, и я готов ответить на ваш вопрос.',
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      setMessages(prev => ({
+        ...prev,
+        [activeCategory]: [...(prev[activeCategory] || []), botResponse]
+      }));
+    }, 2500);
   };
 
   const handleSend = async () => {
@@ -393,7 +426,14 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
           <FileUpload onFilesUpload={handleFilesUpload} />
         </div>
       )}
-
+      {showVoiceMode && (
+          <div className="voice-wrapper">
+            <VoiceMode onAudioUpload={handleAudioUpload} />
+            <Button type="text" size="small" onClick={() => setShowVoiceMode(false)} style={{ marginTop: 8 }}>
+              Закрыть
+            </Button>
+          </div>
+        )}
       {/* Поле ввода */}
       <div className="input-container">
         <Space.Compact style={{ width: '100%' }}>
@@ -411,6 +451,17 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
             onClick={() => setShowFileUpload(!showFileUpload)}
             style={{ height: 'auto', borderRadius: 0 }}
           />
+             <Button 
+              type='default'
+              icon={<AudioOutlined />}
+              onClick={() => {
+                setShowVoiceMode(!showVoiceMode);
+              }}
+              style={{ 
+                height: 'auto', 
+                borderRadius: 0,
+              }}
+            />
           <Button 
             type="primary" 
             icon={<SendOutlined />} 

@@ -154,3 +154,10 @@
 .message:hover {
   background: rgba(0, 0, 0, 0.02);
 }
+.voice-wrapper {
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px dashed #d9d9d9;
+}
