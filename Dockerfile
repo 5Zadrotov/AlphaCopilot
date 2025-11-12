@@ -1,16 +1,15 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS builder 
-WORKDIR /Application
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
 
-COPY WebApp/*.csproj ./
-RUN dotnet restore
+COPY ["WebApp/WebApp.csproj", "."]
+RUN dotnet restore "WebApp.csproj"
 
-COPY WebApp/ ./
-RUN dotnet publish -c Release -o output
+COPY WebApp/ .
+RUN dotnet publish "WebApp.csproj" -c Release -o /app/publish
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
-WORKDIR /Application
-COPY --from=builder /Application/output .
-
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
 
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
