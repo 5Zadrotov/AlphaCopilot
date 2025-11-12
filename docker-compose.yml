@@ -39,7 +39,9 @@ services:
     container_name: apiserver
     restart: unless-stopped
     ports:
-      - "8000:5106"
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
     depends_on:
       - postgres
     networks:
