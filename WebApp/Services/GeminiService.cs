@@ -17,7 +17,6 @@ namespace WebApp.Services
             if (string.IsNullOrEmpty(apiKey))
                 throw new Exception("Gemini API key не настроен в appsettings.json");
 
-            // Создаем клиента с API ключом (для версии 0.4.0)
             _client = new Client(apiKey: apiKey);
         }
 
@@ -44,7 +43,7 @@ namespace WebApp.Services
             }
         }
 
-        private string BuildPrompt(string userInput, string category)
+        private static string BuildPrompt(string userInput, string category)
         {
             var categoryPrompt = category switch
             {
