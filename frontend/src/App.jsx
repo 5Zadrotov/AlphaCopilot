@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button, Space, Card, Badge } from 'antd';
-import { PlusOutlined, LogoutOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Space, Card, Badge, Drawer } from 'antd';
+import { PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined } from '@ant-design/icons';
 import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
@@ -20,6 +20,8 @@ function App() {
   const [customChats, setCustomChats] = useState([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { currentUser, logout } = useAuth();
 
   const defaultCategories = [
@@ -30,16 +32,26 @@ function App() {
     { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление', isDefault: true }
   ];
 
+  // Определение мобильного устройства
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Загрузка кастомных чатов из localStorage
   useEffect(() => {
-    if (!currentUser) return; // Просто не загружаем если нет пользователя
+    if (!currentUser) return;
 
     const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
     const savedCustomChats = localStorage.getItem(userCustomChatsKey);
     if (savedCustomChats) {
       setCustomChats(JSON.parse(savedCustomChats));
     } else {
-      setCustomChats([]); // Только если действительно нет данных
+      setCustomChats([]);
     }
   }, [currentUser]);
 
@@ -55,6 +67,10 @@ function App() {
 
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
+    // Закрываем меню на мобилке после выбора категории
+    if (isMobile) {
+      setMobileMenuVisible(false);
+    }
     // Убираем категорию из непрочитанных при клике
     if (unreadCategories.has(categoryId)) {
       const newUnread = new Set(unreadCategories);
@@ -66,11 +82,77 @@ function App() {
   const handleCreateChat = (newChat) => {
     setCustomChats(prev => [...prev, newChat]);
     setActiveCategory(newChat.id);
+    if (isMobile) {
+      setMobileMenuVisible(false);
+    }
   };
 
   const handleUnreadUpdate = (unreadSet) => {
     setUnreadCategories(unreadSet);
   };
+
+  // Компонент сайдбара (вынесен для переиспользования)
+  const SidebarContent = () => (
+    <div className="sidebar">
+      <div className="welcome-section">
+        <Title level={3} className="welcome-title">
+          {currentUser ? `Привет, ${currentUser.username}!` : 'Привет!'} Чем я могу помочь?
+        </Title>
+      </div>
+      
+      <div className="categories-section">
+        <div className="categories-header">
+          <Text strong className="categories-title">Темы для обсуждения:</Text>
+          <Button 
+            type="primary" 
+            size="small" 
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setCreateModalVisible(true);
+              if (isMobile) setMobileMenuVisible(false);
+            }}
+            disabled={!currentUser}
+          >
+            Новая тема
+          </Button>
+        </div>
+        
+        <div className="categories-list">
+          {allCategories.map((category) => (
+            <Badge 
+              key={category.id}
+              dot={unreadCategories.has(category.id)}
+              offset={[-5, 5]}
+              color="red"
+            >
+              <Card 
+                className={`category-card ${activeCategory === category.id ? 'active' : ''}`}
+                hoverable
+                onClick={() => handleCategoryClick(category.id)}
+              >
+                <div className="category-content">
+                  <div className="category-icon">{category.icon}</div>
+                  <div className="category-text">
+                    <Text strong className="category-name">
+                      {category.name}
+                      {category.isCustom && (
+                        <Text type="secondary" style={{ fontSize: '10px', marginLeft: '4px' }}>
+                          ●
+                        </Text>
+                      )}
+                    </Text>
+                    <Text type="secondary" className="category-description">
+                      {category.description}
+                    </Text>
+                  </div>
+                </div>
+              </Card>
+            </Badge>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <Layout className="app-layout">
@@ -78,29 +160,40 @@ function App() {
       <Header className="app-header">
         <div className="header-content">
           <div className="logo-section">
-            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="16" fill="#0078D4"/>
-  <path d="M20 32L28 40L44 24" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M32 20V44" stroke="white" stroke-width="4" stroke-linecap="round"/>
-</svg>
-            <Title level={2} className="logo-text">СорilotX</Title>
+            <div className="logo-and-menu">
+              {isMobile && (
+                <Button 
+                  type="text" 
+                  icon={mobileMenuVisible ? <CloseOutlined /> : <MenuOutlined />}
+                  onClick={() => setMobileMenuVisible(!mobileMenuVisible)}
+                  className="mobile-menu-button"
+                />
+              )}
+              <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="app-logo">
+                <rect width="64" height="64" rx="16" fill="#0078D4"/>
+                <path d="M20 32L28 40L44 24" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M32 20V44" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+              </svg>
+              <Title level={2} className="logo-text">СорilotX</Title>
+            </div>
           </div>
           <div className="auth-section">
             <Space size="middle">
               {currentUser ? (
                 <>
-                  <Text className="user-welcome">Привет, {currentUser.username}!</Text>
-                  <Button type="text" icon={<LogoutOutlined />} onClick={logout}>
-                    Выйти
+                  <Text className="user-welcome mobile-hidden">Привет, {currentUser.username}!</Text>
+                  <Button type="text" icon={<LogoutOutlined />} onClick={logout} className="logout-button">
+                    <span className="mobile-hidden">Выйти</span>
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button type="text" onClick={() => setAuthModalVisible(true)}>
+                  <Button type="text" onClick={() => setAuthModalVisible(true)} className="mobile-hidden">
                     Зарегистрироваться
                   </Button>
-                  <Button type="primary" onClick={() => setAuthModalVisible(true)}>
-                    Войти
+                  <Button type="primary" onClick={() => setAuthModalVisible(true)} className="login-button">
+                    <span className="mobile-hidden">Войти</span>
+                    <UserOutlined className="mobile-only" />
                   </Button>
                 </>
               )}
@@ -112,63 +205,8 @@ function App() {
       {/* Основной контент */}
       <Content className="app-content">
         <div className="main-container">
-          {/* Левая панель с категориями */}
-          <div className="sidebar">
-            <div className="welcome-section">
-              <Title level={3} className="welcome-title">
-                {currentUser ? `Привет, ${currentUser.username}!` : 'Привет!'} Чем я могу помочь?
-              </Title>
-            </div>
-            
-            <div className="categories-section">
-              <div className="categories-header">
-                <Text strong className="categories-title">Темы для обсуждения:</Text>
-                <Button 
-                  type="primary" 
-                  size="small" 
-                  icon={<PlusOutlined />}
-                  onClick={() => setCreateModalVisible(true)}
-                  disabled={!currentUser}
-                >
-                  Новая тема
-                </Button>
-              </div>
-              
-              <div className="categories-list">
-                {allCategories.map((category) => (
-                  <Badge 
-                    key={category.id}
-                    dot={unreadCategories.has(category.id)}
-                    offset={[-5, 5]}
-                    color="red"
-                  >
-                    <Card 
-                      className={`category-card ${activeCategory === category.id ? 'active' : ''}`}
-                      hoverable
-                      onClick={() => handleCategoryClick(category.id)}
-                    >
-                      <div className="category-content">
-                        <div className="category-icon">{category.icon}</div>
-                        <div className="category-text">
-                          <Text strong className="category-name">
-                            {category.name}
-                            {category.isCustom && (
-                              <Text type="secondary" style={{ fontSize: '10px', marginLeft: '4px' }}>
-                                ●
-                              </Text>
-                            )}
-                          </Text>
-                          <Text type="secondary" className="category-description">
-                            {category.description}
-                          </Text>
-                        </div>
-                      </div>
-                    </Card>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
+          {/* Левая панель с категориями - скрыта на мобилке */}
+          {!isMobile && <SidebarContent />}
 
           {/* Правая панель с чатом */}
           <div className="chat-panel">
@@ -180,6 +218,24 @@ function App() {
             />
           </div>
         </div>
+
+        {/* Мобильное меню */}
+        {isMobile && (
+          <Drawer
+            title={
+              <div className="mobile-drawer-header">
+                <Title level={4} style={{ margin: 0, color: '#262626' }}>Меню</Title>
+              </div>
+            }
+            placement="left"
+            onClose={() => setMobileMenuVisible(false)}
+            open={mobileMenuVisible}
+            width={300}
+            bodyStyle={{ padding: '16px' }}
+          >
+            <SidebarContent />
+          </Drawer>
+        )}
 
         {/* Модальное окно создания чата */}
         <CreateChatModal
