@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16 
-    container_name: alfa_postgres_server
+    container_name: postgres_server
     restart: unless-stopped
     environment:
       POSTGRES_USER: admin # login
@@ -9,7 +9,7 @@ services:
       POSTGRES_DB: alphacopilot
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - .\init.sql:/docker-entrypoint-initdb.d/init.sql # первоначальные запросы в бд ministore
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql # первоначальные запросы в бд ministore
     ports: 
       - "5432:5432"
     networks:

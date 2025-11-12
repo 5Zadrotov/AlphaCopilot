@@ -2,3 +2,6 @@
 .github
 WebApp/bin/
 WebApp/obj/
+
+postgresql_data
+pgadmin4_data
