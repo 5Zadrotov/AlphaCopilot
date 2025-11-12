@@ -78,6 +78,11 @@ function App() {
       <Header className="app-header">
         <div className="header-content">
           <div className="logo-section">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="16" fill="#0078D4"/>
+  <path d="M20 32L28 40L44 24" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 20V44" stroke="white" stroke-width="4" stroke-linecap="round"/>
+</svg>
             <Title level={2} className="logo-text">СорilotX</Title>
           </div>
           <div className="auth-section">

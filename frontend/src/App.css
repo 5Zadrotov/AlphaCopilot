@@ -7,8 +7,8 @@
 .app-header {
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 0 24px;
-  height: 70px;
+  padding: 12px 35px;
+  height: 130px;
   display: flex;
   align-items: center;
   border-bottom: 1px solid #e8e8e8;
@@ -22,8 +22,8 @@
 }
 
 .logo-text {
-  color: #1890ff !important;
-  margin: 0 !important;
+  color: #000000;
+  margin-top: -20px;
   font-weight: 700;
   font-size: 28px !important;
 }
