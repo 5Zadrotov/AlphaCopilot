@@ -12,6 +12,7 @@ WORKDIR /Application
 COPY --from=builder /Application/output .
 
 
-EXPOSE 80
-EXPOSE 443
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+
 ENTRYPOINT ["dotnet", "WebApp.dll"]

@@ -49,7 +49,7 @@ internal partial class Program
         // Add endpoints for authorization
         builder.Services.AddAuthorization();
 
-        // Configure Swagger - только один вызов AddSwaggerGen!
+        // Configure Swagger - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ AddSwaggerGen!
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
         {
@@ -57,7 +57,7 @@ internal partial class Program
             {
                 Title = "Alpha Business Assistant API",
                 Version = "v1",
-                Description = "API для ассистента малого бизнеса с поддержкой JWT аутентификации"
+                Description = "API пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ JWT пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ"
             });
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -94,11 +94,11 @@ internal partial class Program
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Alpha Business Assistant API V1");
-                c.RoutePrefix = string.Empty; // Swagger будет доступен на корневом пути
+                c.RoutePrefix = string.Empty; // Swagger пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
             });
         }
 
-        app.UseHttpsRedirection();
+        // app.UseHttpsRedirection(); // РћС‚РєР»СЋС‡РµРЅРѕ РґР»СЏ Docker
 
         // Authentication & Authorization middleware
         app.UseAuthentication();
