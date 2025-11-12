@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Space, Card, Badge, Drawer } from 'antd';
-import { PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined } from '@ant-design/icons';
+import { PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons';
 import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
 import AuthModal from './components/AuthModal';
 import DBCleaner from './utils/DBCleaner';
+import MobileSidebar from './components/MobileSidebar';
 import './App.css';
 
 const { Header, Content } = Layout;
@@ -67,11 +68,9 @@ function App() {
 
   const handleCategoryClick = (categoryId) => {
     setActiveCategory(categoryId);
-    // Закрываем меню на мобилке после выбора категории
     if (isMobile) {
       setMobileMenuVisible(false);
     }
-    // Убираем категорию из непрочитанных при клике
     if (unreadCategories.has(categoryId)) {
       const newUnread = new Set(unreadCategories);
       newUnread.delete(categoryId);
@@ -91,8 +90,8 @@ function App() {
     setUnreadCategories(unreadSet);
   };
 
-  // Компонент сайдбара (вынесен для переиспользования)
-  const SidebarContent = () => (
+  // Компонент сайдбара для десктопа
+  const DesktopSidebar = () => (
     <div className="sidebar">
       <div className="welcome-section">
         <Title level={3} className="welcome-title">
@@ -107,10 +106,7 @@ function App() {
             type="primary" 
             size="small" 
             icon={<PlusOutlined />}
-            onClick={() => {
-              setCreateModalVisible(true);
-              if (isMobile) setMobileMenuVisible(false);
-            }}
+            onClick={() => setCreateModalVisible(true)}
             disabled={!currentUser}
           >
             Новая тема
@@ -156,7 +152,6 @@ function App() {
 
   return (
     <Layout className="app-layout">
-      {/* Хедер с навигацией */}
       <Header className="app-header">
         <div className="header-content">
           <div className="logo-section">
@@ -202,13 +197,10 @@ function App() {
         </div>
       </Header>
       
-      {/* Основной контент */}
       <Content className="app-content">
         <div className="main-container">
-          {/* Левая панель с категориями - скрыта на мобилке */}
-          {!isMobile && <SidebarContent />}
+          {!isMobile && <DesktopSidebar />}
 
-          {/* Правая панель с чатом */}
           <div className="chat-panel">
             <ChatInterface 
               activeCategory={activeCategory} 
@@ -219,38 +211,42 @@ function App() {
           </div>
         </div>
 
-        {/* Мобильное меню */}
+        {/* Мобильное меню с новым компонентом */}
         {isMobile && (
           <Drawer
-            title={
-              <div className="mobile-drawer-header">
-                <Title level={4} style={{ margin: 0, color: '#262626' }}>Меню</Title>
-              </div>
-            }
+            title="Меню"
             placement="left"
             onClose={() => setMobileMenuVisible(false)}
             open={mobileMenuVisible}
-            width={300}
-            bodyStyle={{ padding: '16px' }}
+            width={280}
+            styles={{
+              body: { padding: '16px' }
+            }}
           >
-            <SidebarContent />
+            <MobileSidebar
+              categories={allCategories}
+              activeCategory={activeCategory}
+              onCategoryClick={handleCategoryClick}
+              onCreateChat={() => {
+                setCreateModalVisible(true);
+                setMobileMenuVisible(false);
+              }}
+              currentUser={currentUser}
+            />
           </Drawer>
         )}
 
-        {/* Модальное окно создания чата */}
         <CreateChatModal
           visible={createModalVisible}
           onCancel={() => setCreateModalVisible(false)}
           onCreate={handleCreateChat}
         />
 
-        {/* Модальное окно авторизации */}
         <AuthModal
           visible={authModalVisible}
           onCancel={() => setAuthModalVisible(false)}
         />
 
-        {/* Кнопка очистки БД */}
         <DBCleaner />
       </Content>
     </Layout>

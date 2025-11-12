@@ -397,51 +397,6 @@
   }
 }
 
-/* Поддержка темной темы */
-@media (prefers-color-scheme: dark) {
-  .chat-interface {
-    background: #141414;
-  }
-  
-  .messages-container {
-    background: #1f1f1f;
-    border-color: #303030;
-  }
-  
-  .bot-message .message-content {
-    background: #262626;
-    color: #d9d9d9;
-    border-color: #434343;
-  }
-  
-  .user-message .message-content {
-    background: #177ddc;
-  }
-  
-  .input-container {
-    background: #1f1f1f;
-    border-color: #303030;
-  }
-  
-  .file-upload-section,
-  .voice-wrapper {
-    background: #262626;
-    border-color: #434343;
-  }
-  
-  .typing-indicator {
-    color: #8c8c8c;
-  }
-  
-  .file-attachments {
-    color: #bfbfbf;
-  }
-  
-  .bot-message .file-attachments {
-    background: rgba(255, 255, 255, 0.08);
-  }
-}
-
 /* Улучшения доступности */
 @media (prefers-reduced-motion: reduce) {
   .message-actions-btn {
@@ -484,20 +439,6 @@
 
 .messages-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
-}
-
-@media (prefers-color-scheme: dark) {
-  .messages-container::-webkit-scrollbar-track {
-    background: #303030;
-  }
-  
-  .messages-container::-webkit-scrollbar-thumb {
-    background: #595959;
-  }
-  
-  .messages-container::-webkit-scrollbar-thumb:hover {
-    background: #737373;
-  }
 }
 
 /* Анимации для мобильных (только если не reduced-motion) */
