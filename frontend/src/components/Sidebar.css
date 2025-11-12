@@ -1,0 +1,58 @@
+.sidebar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.examples-card {
+  height: 50vh;
+  overflow-y: auto;
+}
+
+.sidebar-content {
+  padding: 8px 0;
+}
+
+.example-section {
+  margin-bottom: 20px;
+}
+
+.example-section:last-child {
+  margin-bottom: 0;
+}
+
+.example-item {
+  padding: 4px 0 !important;
+  border: none !important;
+}
+
+.example-button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.3s;
+  height: auto;
+  white-space: normal;
+}
+
+.example-button:hover {
+  background-color: #f0f7ff;
+  border-color: #1890ff;
+}
+
+.example-button .ant-typography {
+  margin: 0;
+  line-height: 1.4;
+}
+
+
+@media (max-width: 768px) {
+  .examples-card {
+    height: auto;
+  }
+  
+  .sidebar-container {
+    gap: 12px;
+  }
+}

@@ -1,0 +1,28 @@
+.file-upload {
+  margin-bottom: 16px;
+}
+
+.file-dragger {
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  transition: border-color 0.3s;
+}
+
+.file-dragger:hover {
+  border-color: #1890ff;
+}
+
+.upload-content {
+  padding: 16px;
+}
+
+.upload-content .ant-upload-text {
+  color: #333;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.upload-content .ant-upload-hint {
+  color: #666;
+  font-size: 12px;
+}
