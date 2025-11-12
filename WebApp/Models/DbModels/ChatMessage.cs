@@ -3,9 +3,9 @@
 public class ChatMessage
 {
     public Guid Id { get; set; }
-    public Guid SessionId { get; set; }
-    public string Sender { get; set; } = string.Empty;
+    public Guid UserId { get; set; }
     public string Content { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public int TokenUsage { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public bool IsFromUser { get; set; }
+    public string Category { get; set; } = "Общее";
 }

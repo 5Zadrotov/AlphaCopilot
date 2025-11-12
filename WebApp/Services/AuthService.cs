@@ -2,10 +2,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Text.RegularExpressions;
 using WebApp.Interfaces;
-using WebApp.Models;
 using WebApp.Models.DbModels;
+using WebApp.Models.Dto;
 
 namespace WebApp.Services
 {
@@ -14,28 +13,29 @@ namespace WebApp.Services
         private readonly List<User> _users = [];
         private readonly IConfiguration _configuration;
 
-        // Демо-пользователь для тестирования
         public AuthService(IConfiguration configuration)
         {
             _configuration = configuration;
+
+            // Демо-пользователь для тестирования
             _users.Add(new User
             {
-                Id = 1,
-                Username = "some",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("69696969"),
-                Email = "some@example.com"
+                Id = Guid.NewGuid(),
+                Email = "demo@example.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("demo123"),
+                FullName = "Демо Пользователь",
+                CreatedAt = DateTime.UtcNow
             });
         }
 
-        public AuthResponse? Authenticate(string username, string password)
+        public AuthResponse? Authenticate(string email, string password)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                     return null;
 
-                var user = _users.FirstOrDefault(u => u.Username == username);
-
+                var user = _users.FirstOrDefault(u => u.Email == email);
                 if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                     return null;
 
@@ -46,7 +46,8 @@ namespace WebApp.Services
                 return new AuthResponse
                 {
                     Token = token,
-                    Username = user.Username
+                    Email = user.Email,
+                    DisplayName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : user.Email.Split('@')[0]
                 };
             }
             catch
@@ -55,40 +56,25 @@ namespace WebApp.Services
             }
         }
 
-        public bool RegisterUser(string username, string password, string email, out string message)
+        public bool RegisterUser(string email, string password, string fullName, out string message)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username) || username.Length < 4)
-                {
-                    message = "Имя пользователя должно содержать не менее 4 символов.";
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
-                {
-                    message = "Пароль должен содержать не менее 6 символов.";
-                    return false;
-                }
-
                 if (string.IsNullOrWhiteSpace(email))
                 {
                     message = "Email обязателен для заполнения.";
                     return false;
                 }
-
-                if (_users.Any(u => u.Username == username))
+                if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
                 {
-                    message = "Имя пользователя уже занято.";
+                    message = "Пароль должен содержать не менее 6 символов.";
                     return false;
                 }
-
                 if (_users.Any(u => u.Email == email))
                 {
-                    message = "Email уже занят.";
+                    message = "Пользователь с таким email уже существует.";
                     return false;
                 }
-
                 if (!IsValidEmail(email))
                 {
                     message = "Некорректный формат email.";
@@ -97,10 +83,11 @@ namespace WebApp.Services
 
                 var newUser = new User
                 {
-                    Id = _users.Count + 1,
-                    Username = username,
+                    Id = Guid.NewGuid(),
+                    Email = email,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                    Email = email
+                    FullName = fullName,
+                    CreatedAt = DateTime.UtcNow
                 };
 
                 _users.Add(newUser);
@@ -127,7 +114,8 @@ namespace WebApp.Services
                     Subject = new ClaimsIdentity(
                     [
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Name, user.Username)
+                        new Claim(ClaimTypes.Name, user.Email),
+                        new Claim(ClaimTypes.Email, user.Email)
                     ]),
                     Expires = DateTime.UtcNow.AddHours(tokenExpirationHours),
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

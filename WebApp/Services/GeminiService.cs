@@ -1,162 +1,60 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using System.Text.RegularExpressions;
+﻿using Google.GenAI;
 using WebApp.Interfaces;
-using WebApp.Models;
-using WebApp.Models.DbModels;
 
 namespace WebApp.Services
 {
-    public class AuthService : IAuthService
+    public class GeminiService : IAiService
     {
-        private readonly List<User> _users = [];
+        private readonly Client _client;
         private readonly IConfiguration _configuration;
 
-        // Демо-пользователь для тестирования
-        public AuthService(IConfiguration configuration)
+        public GeminiService(IConfiguration configuration)
         {
             _configuration = configuration;
-            _users.Add(new User
-            {
-                Id = 1,
-                Username = "some",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("69696969"),
-                Email = "some@example.com"
-            });
+
+            // Получаем API ключ из appsettings.json
+            var apiKey = _configuration["Gemini:ApiKey"];
+            if (string.IsNullOrEmpty(apiKey))
+                throw new Exception("Gemini API key не настроен в appsettings.json");
+
+            // Создаем клиента с API ключом (для версии 0.4.0)
+            _client = new Client(apiKey: apiKey);
         }
 
-        public AuthResponse? Authenticate(string username, string password)
+        public async Task<string> GetResponseAsync(string userInput, string category, Guid userId)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-                    return null;
+                // Создаем контекстный промпт
+                var prompt = BuildPrompt(userInput, category);
 
-                var user = _users.FirstOrDefault(u => u.Username == username);
+                // Делаем запрос к Gemini
+                var response = await _client.Models.GenerateContentAsync(
+                    model: "gemini-2.5-flash",
+                    contents: prompt
+                );
 
-                if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
-                    return null;
-
-                var token = GenerateJwtToken(user);
-                if (string.IsNullOrEmpty(token))
-                    return null;
-
-                return new AuthResponse
-                {
-                    Token = token,
-                    Username = user.Username
-                };
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        public bool RegisterUser(string username, string password, string email, out string message)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(username) || username.Length < 4)
-                {
-                    message = "Имя пользователя должно содержать не менее 4 символов.";
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
-                {
-                    message = "Пароль должен содержать не менее 6 символов.";
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(email))
-                {
-                    message = "Email обязателен для заполнения.";
-                    return false;
-                }
-
-                if (_users.Any(u => u.Username == username))
-                {
-                    message = "Имя пользователя уже занято.";
-                    return false;
-                }
-
-                if (_users.Any(u => u.Email == email))
-                {
-                    message = "Email уже занят.";
-                    return false;
-                }
-
-                if (!IsValidEmail(email))
-                {
-                    message = "Некорректный формат email.";
-                    return false;
-                }
-
-                var newUser = new User
-                {
-                    Id = _users.Count + 1,
-                    Username = username,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-                    Email = email
-                };
-
-                _users.Add(newUser);
-                message = "Пользователь успешно зарегистрирован.";
-                return true;
+                // Получаем текст ответа
+                var result = response.Candidates[0].Content.Parts[0].Text;
+                return result is not null ? result : "Извините, возникла ошибка при обработке вашего запроса: {ex.Message}. Пожалуйста, попробуйте позже.";
             }
             catch (Exception ex)
             {
-                message = $"Внутренняя ошибка сервера: {ex.Message}.";
-                return false;
+                return $"Извините, возникла ошибка при обработке вашего запроса: {ex.Message}. Пожалуйста, попробуйте позже.";
             }
         }
 
-        private string GenerateJwtToken(User user)
+        private string BuildPrompt(string userInput, string category)
         {
-            try
+            var categoryPrompt = category switch
             {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]!);
-                var tokenExpirationHours = int.Parse(_configuration["Jwt:TokenExpirationHours"]!);
+                "Юридическое" => "Вы - юридический эксперт для малого бизнеса в России. Дайте четкий ответ с ссылками на российское законодательство.",
+                "Финансы" => "Вы - финансовый эксперт для малого бизнеса в России. Предоставьте практические рекомендации по финансовым вопросам.",
+                "Маркетинг" => "Вы - маркетинговый эксперт для малого бизнеса в России. Предложите конкретные стратегии продвижения.",
+                _ => "Вы - экспертный бизнес-ассистент для малого бизнеса в России. Дайте практичный и конкретный совет."
+            };
 
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(
-                    [
-                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Name, user.Username)
-                    ]),
-                    Expires = DateTime.UtcNow.AddHours(tokenExpirationHours),
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                };
-
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                return tokenHandler.WriteToken(token);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка генерации токена: {ex.Message}");
-                return string.Empty;
-            }
-        }
-
-        public static bool IsValidEmail(string email)
-        {
-            if (string.IsNullOrWhiteSpace(email))
-                return false;
-
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
+            return $"{categoryPrompt}\n\nВопрос пользователя: {userInput}\n\nОтвет:";
         }
     }
 }

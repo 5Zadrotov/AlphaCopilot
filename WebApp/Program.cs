@@ -11,23 +11,24 @@ internal partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Загружаем конфигурацию из папки Secrets
         var secretsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Secrets");
         builder.Configuration.AddJsonFile(
             Path.Combine(secretsDirectory, "appsettings.json"),
             optional: false,
             reloadOnChange: true);
 
-        // Add services to the container.
+        // Добавляем сервисы
         builder.Services.AddControllers();
 
-        // JWT Configuration
+        // Конфигурация JWT
         var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]!;
         var jwtTokenExpirationHours = int.Parse(builder.Configuration["Jwt:TokenExpirationHours"]!);
 
         builder.Services.AddSingleton<IAuthService, AuthService>();
-        builder.Services.AddScoped<IAiService, MockAiService>();
+        builder.Services.AddScoped<IAiService, GeminiService>();
 
-        // Add authentication
+        // Настройка аутентификации
         builder.Services.AddAuthentication(options =>
         {
             options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -46,11 +47,10 @@ internal partial class Program
             };
         });
 
-        // Add endpoints for authorization
         builder.Services.AddAuthorization();
-
-        // Configure Swagger - только один вызов AddSwaggerGen!
         builder.Services.AddEndpointsApiExplorer();
+
+        // Настройка Swagger с поддержкой авторизации
         builder.Services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo
@@ -60,6 +60,7 @@ internal partial class Program
                 Description = "API для ассистента малого бизнеса с поддержкой JWT аутентификации"
             });
 
+            // Добавляем поддержку JWT в Swagger
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
@@ -87,7 +88,7 @@ internal partial class Program
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
+        // Конфигурация HTTP запросов
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -99,13 +100,9 @@ internal partial class Program
         }
 
         app.UseHttpsRedirection();
-
-        // Authentication & Authorization middleware
         app.UseAuthentication();
         app.UseAuthorization();
-
         app.MapControllers();
-
         app.Run();
     }
 }
