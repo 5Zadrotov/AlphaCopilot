@@ -12,7 +12,7 @@ namespace WebApp.Services
         {
             _configuration = configuration;
 
-            // Получаем API ключ из appsettings.json
+            //получаем API ключ из appsettings.json
             var apiKey = _configuration["Gemini:ApiKey"];
             if (string.IsNullOrEmpty(apiKey))
                 throw new Exception("Gemini API key не настроен в appsettings.json");
@@ -24,16 +24,16 @@ namespace WebApp.Services
         {
             try
             {
-                // Создаем контекстный промпт
+                //создаем контекстный промпт
                 var prompt = BuildPrompt(userInput, category);
 
-                // Делаем запрос к Gemini
+                //делаем запрос к Gemini
                 var response = await _client.Models.GenerateContentAsync(
                     model: "gemini-2.5-flash",
                     contents: prompt
                 );
 
-                // Получаем текст ответа
+                //получаем текст ответа
                 var result = response.Candidates[0].Content.Parts[0].Text;
                 return result is not null ? result : "Извините, возникла ошибка при обработке вашего запроса: {ex.Message}. Пожалуйста, попробуйте позже.";
             }

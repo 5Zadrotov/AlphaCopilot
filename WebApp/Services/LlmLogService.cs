@@ -9,7 +9,7 @@ namespace WebApp.Services
 
         public async Task CreateLogAsync(LlmLog log)
         {
-            // Реализация логирования в БД
+            //тут будет логика сохранения лога в базу данных
             await Task.CompletedTask;
         }
     }
