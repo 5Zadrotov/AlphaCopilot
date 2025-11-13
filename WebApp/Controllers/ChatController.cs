@@ -12,7 +12,7 @@ namespace WebApp.Controllers
     public class ChatController(IAiService aiService) : ControllerBase
     {
         private readonly IAiService _aiService = aiService;
-        private static readonly Dictionary<Guid, List<ChatMessage>> _sessions = new();
+        private static readonly Dictionary<Guid, List<ChatMessage>> _sessions = [];
 
         [HttpPost("message")]
         public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)

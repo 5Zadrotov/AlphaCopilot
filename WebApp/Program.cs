@@ -57,7 +57,6 @@ internal partial class Program
         // Add endpoints for authorization
         builder.Services.AddAuthorization();
 
-        // Configure Swagger - ������ ���� ����� AddSwaggerGen!
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
         {
@@ -125,7 +124,7 @@ internal partial class Program
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Alpha Business Assistant API V1");
-                c.RoutePrefix = string.Empty; // Swagger ����� �������� �� �������� ����
+                c.RoutePrefix = string.Empty;
             });
         }
 
