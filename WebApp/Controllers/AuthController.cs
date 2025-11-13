@@ -11,21 +11,16 @@ namespace WebApp.Controllers
         private readonly IAuthService _authService = authService;
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] AuthRequest request)
+        public async Task<IActionResult> Login([FromBody] AuthRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
                 return BadRequest(new { message = "Email и пароль об€зательны дл€ заполнени€." });
 
-            var authResponse = _authService.Authenticate(request.Email, request.Password);
+            var authResponse = await _authService.AuthenticateAsync(request.Email, request.Password);
             if (authResponse == null)
                 return Unauthorized(new { message = "Ќеверный email или пароль" });
 
-            return Ok(new
-            {
-                authResponse.Token,
-                authResponse.Email,
-                authResponse.DisplayName
-            });
+            return Ok(authResponse);
         }
 
         [HttpPost("register")]
@@ -50,6 +45,34 @@ namespace WebApp.Controllers
 
             return CreatedAtAction(nameof(Login), new { email = request.Email },
                 new { message = "–егистраци€ прошла успешно", email = request.Email });
+        }
+
+        // POST api/auth/refresh
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
+                return BadRequest(new { message = "RefreshToken об€зателен" });
+
+            var authResponse = await _authService.RefreshTokenAsync(request.RefreshToken);
+            if (authResponse == null)
+                return Unauthorized(new { message = "Refresh token неверен или истЄк" });
+
+            return Ok(authResponse);
+        }
+
+        // POST api/auth/logout
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
+                return BadRequest(new { message = "RefreshToken об€зателен" });
+
+            var ok = await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
+            if (!ok)
+                return NotFound(new { message = "Refresh token не найден" });
+
+            return NoContent();
         }
     }
 }

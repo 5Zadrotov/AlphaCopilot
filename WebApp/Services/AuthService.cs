@@ -2,6 +2,7 @@
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using WebApp.Data;
 using WebApp.Interfaces;
@@ -10,31 +11,46 @@ using WebApp.Models.Dto;
 
 namespace WebApp.Services
 {
-    public class AuthService(ApplicationDbContext db, IConfiguration configuration) : IAuthService
+    public class AuthService : IAuthService
     {
-        private readonly ApplicationDbContext _db = db;
-        private readonly IConfiguration _configuration = configuration;
+        private readonly ApplicationDbContext _db;
+        private readonly IConfiguration _configuration;
 
-        public AuthResponse? Authenticate(string email, string password)
+        private readonly int _jwtHours;
+        private readonly int _refreshDays;
+
+        public AuthService(ApplicationDbContext db, IConfiguration configuration)
+        {
+            _db = db;
+            _configuration = configuration;
+            _jwtHours = int.TryParse(_configuration["Jwt:TokenExpirationHours"], out var h) ? h : 1;
+            _refreshDays = int.TryParse(_configuration["Jwt:RefreshTokenDays"], out var d) ? d : 14;
+        }
+
+        public async Task<AuthResponse?> AuthenticateAsync(string email, string password)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                     return null;
 
-                var user = _db.Users.AsNoTracking().FirstOrDefault(u => u.Email == email);
+                var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
                 if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                     return null;
 
-                var token = GenerateJwtToken(user);
-                if (string.IsNullOrEmpty(token))
-                    return null;
+                var jwt = GenerateJwtToken(user);
+                var (refreshTokenPlain, refreshTokenEntity) = CreateRefreshTokenForUser(user.Id);
+
+                await _db.RefreshTokens.AddAsync(refreshTokenEntity);
+                await _db.SaveChangesAsync();
 
                 return new AuthResponse
                 {
-                    Token = token,
+                    Token = jwt,
                     Email = user.Email,
-                    DisplayName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : user.Email.Split('@')[0]
+                    DisplayName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : user.Email.Split('@')[0],
+                    RefreshToken = refreshTokenPlain,
+                    RefreshTokenExpiresAt = refreshTokenEntity.ExpiresAt
                 };
             }
             catch
@@ -90,13 +106,92 @@ namespace WebApp.Services
             }
         }
 
+        public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken)
+        {
+            try
+            {
+                var hash = HashToken(refreshToken);
+                var tokenEntity = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == hash);
+                if (tokenEntity == null) return null;
+                if (tokenEntity.RevokedAt != null) return null;
+                if (tokenEntity.ExpiresAt <= DateTime.UtcNow) return null;
+
+                var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == tokenEntity.UserId);
+                if (user == null) return null;
+
+                // rotate: revoke old and create new
+                tokenEntity.RevokedAt = DateTime.UtcNow;
+
+                var (newRefreshPlain, newRefreshEntity) = CreateRefreshTokenForUser(user.Id);
+                tokenEntity.ReplacedByTokenHash = newRefreshEntity.TokenHash;
+
+                await _db.RefreshTokens.AddAsync(newRefreshEntity);
+                _db.RefreshTokens.Update(tokenEntity);
+                await _db.SaveChangesAsync();
+
+                var jwt = GenerateJwtToken(user);
+
+                return new AuthResponse
+                {
+                    Token = jwt,
+                    Email = user.Email,
+                    DisplayName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : user.Email.Split('@')[0],
+                    RefreshToken = newRefreshPlain,
+                    RefreshTokenExpiresAt = newRefreshEntity.ExpiresAt
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public async Task<bool> RevokeRefreshTokenAsync(string refreshToken)
+        {
+            var hash = HashToken(refreshToken);
+            var tokenEntity = await _db.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == hash);
+            if (tokenEntity == null) return false;
+            if (tokenEntity.RevokedAt is null)
+            {
+                tokenEntity.RevokedAt = DateTime.UtcNow;
+                _db.RefreshTokens.Update(tokenEntity);
+                await _db.SaveChangesAsync();
+            }
+            return true;
+        }
+
+        private (string plain, RefreshToken entity) CreateRefreshTokenForUser(Guid userId)
+        {
+            var bytes = new byte[64];
+            RandomNumberGenerator.Fill(bytes);
+            var plain = Convert.ToBase64String(bytes);
+
+            var entity = new RefreshToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                TokenHash = HashToken(plain),
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddDays(_refreshDays)
+            };
+
+            return (plain, entity);
+        }
+
+        private static string HashToken(string token)
+        {
+            var data = Encoding.UTF8.GetBytes(token);
+            var hash = SHA256.HashData(data);
+            return Convert.ToBase64String(hash);
+        }
+
         private string GenerateJwtToken(User user)
         {
             try
             {
                 var tokenHandler = new JwtSecurityTokenHandler();
                 var key = Encoding.ASCII.GetBytes(_configuration["Jwt:SecretKey"]!);
-                var tokenExpirationHours = int.Parse(_configuration["Jwt:TokenExpirationHours"]!);
+                var tokenExpirationHours = _jwtHours;
 
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
