@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Space, Card, Badge, Drawer } from 'antd';
-import {PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined,UserOutlined} from '@ant-design/icons';
+import { PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
-import AuthModal from './components/AuthModal'; // ← Оставлен, но не используется
 import DBCleaner from './utils/DBCleaner';
 import MobileSidebar from './components/MobileSidebar';
 import Authorization from './components/Authorization';
@@ -14,28 +13,24 @@ import './App.css';
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-// Хелпер для user-specific кастомных чатов
 const getUserCustomChatsKey = (userId) => `sorilotx-custom-chats-${userId}`;
 
-// === Главная страница (всё, что было в App) ===
 const MainApp = () => {
   const [activeCategory, setActiveCategory] = useState('general');
-  const [unreadCategories, setUnreadCategories] = useState(new Set());
+  const [unreadCount, setUnreadCount] = useState(0); 
   const [customChats, setCustomChats] = useState([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
-
-   const defaultCategories = [
+ 
+  const defaultCategories = [
     { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
-    { id: 'finance', name: 'Финансы', icon: '💰', description: 'Налоги, отчетность, планирование', isDefault: true },
+    { id: 'finance', name: 'Финансы', icon:'💰' , description: 'Налоги, отчетность, планирование', isDefault: true },
     { id: 'marketing', name: 'Маркетинг', icon: '📊', description: 'Продвижение, клиенты, реклама', isDefault: true },
     { id: 'legal', name: 'Юридическое', icon: '⚖️', description: 'Договоры, права, compliance', isDefault: true },
-    { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление', isDefault: true }
+    { id: 'hr', name: 'HR', icon:'👥' , description: 'Персонал, найм, управление', isDefault: true }
   ];
-
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -61,11 +56,6 @@ const MainApp = () => {
   const handleCategoryClick = (id) => {
     setActiveCategory(id);
     if (isMobile) setMobileMenuVisible(false);
-    if (unreadCategories.has(id)) {
-      const newUnread = new Set(unreadCategories);
-      newUnread.delete(id);
-      setUnreadCategories(newUnread);
-    }
   };
 
   const handleCreateChat = (newChat) => {
@@ -74,19 +64,17 @@ const MainApp = () => {
     if (isMobile) setMobileMenuVisible(false);
   };
 
-  const handleUnreadUpdate = (set) => setUnreadCategories(set);
-
   const DesktopSidebar = () => (
     <div className="sidebar">
       <div className="welcome-section">
         <Title level={3} className="welcome-title">
-          {currentUser ? `Привет, ${currentUser.username}!` : 'Привет!'} Чем я могу помочь?
+          {currentUser ? `Привет, ${currentUser.username}! `: 'Привет!'} Чем я могу помочь?
         </Title>
       </div>
       <div className="categories-section">
         <div className="categories-header">
           <Text strong className="categories-title">Темы для обсуждения:</Text>
-<Button
+          <Button
             type="primary"
             size="small"
             icon={<PlusOutlined />}
@@ -98,8 +86,8 @@ const MainApp = () => {
         </div>
         <div className="categories-list">
           {allCategories.map((cat) => (
-            <Badge key={cat.id} dot={unreadCategories.has(cat.id)} offset={[-5, 5]} color="red">
-              <Card
+            <Badge key={cat.id} count={unreadCount > 0 ? 1 : 0} offset={[-5, 5]} color="red">
+<Card
                 className={`category-card ${activeCategory === cat.id ? 'active' : ''}`}
                 hoverable
                 onClick={() => handleCategoryClick(cat.id)}
@@ -155,7 +143,6 @@ const MainApp = () => {
                 </>
               ) : (
                 <>
-                  {/* ССЫЛКИ НА СТРАНИЦУ АВТОРИЗАЦИИ */}
                   <Button type="text" className="mobile-hidden">
                     <Link to="/register">Зарегистрироваться</Link>
                   </Button>
@@ -179,12 +166,13 @@ const MainApp = () => {
             <ChatInterface
               activeCategory={activeCategory}
               categories={allCategories}
-              onUnreadUpdate={handleUnreadUpdate}
+              onUnreadUpdate={setUnreadCount}
               currentUser={currentUser}
             />
           </div>
         </div>
-{isMobile && (
+
+        {isMobile && (
           <Drawer
             title="Меню"
             placement="left"
@@ -205,15 +193,11 @@ const MainApp = () => {
             />
           </Drawer>
         )}
-
-        <CreateChatModal
+<CreateChatModal
           visible={createModalVisible}
           onCancel={() => setCreateModalVisible(false)}
           onCreate={handleCreateChat}
         />
-
-        {/* AuthModal остаётся, но не используется */}
-        <AuthModal visible={false} onCancel={() => {}} />
 
         <DBCleaner />
       </Content>
@@ -221,7 +205,6 @@ const MainApp = () => {
   );
 };
 
-// === Основной App с роутингом ===
 function App() {
   return (
     <BrowserRouter>

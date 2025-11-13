@@ -1,90 +1,84 @@
 import React, { useState } from 'react';
-import { Button, Input, Form, Typography, Space, Tabs, Row, Col, Card } from 'antd';
-import { ArrowLeftOutlined, UserOutlined,  LockOutlined } from '@ant-design/icons';
+import { Button, Input, Form, Typography, Tabs, Row, Col, Card, message } from 'antd';
+import { ArrowLeftOutlined, UserOutlined, LockOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const { TabPane } = Tabs;
 
 const Authorization = () => {
   const [activeTab, setActiveTab] = useState('register');
   const [form] = Form.useForm();
+  const { register, login } = useAuth(); // ← register добавлен!
+  const navigate = useNavigate();
 
-  const onFinish = (values) => {
-    console.log('Регистрация:', values);
-    // Здесь будет запрос на сервер
+  // Регистрация
+  const handleRegister = (values) => {
+    const success = register(values.login, values.password);
+    if (success) {
+        message.success('Регистрация успешна!');;
+    }
   };
 
-  const onLogin = (values) => {
-    console.log('Вход:', values);
-   
+  // Вход
+  const handleLogin = (values) => {
+    const success = login(values.login, values.password);
+    if (success) {
+      navigate('/');
+    }
   };
 
   return (
-    <div style={{ marginTop: '100px', minHeight: '100vh',width:'100%', background: '#f0f2f5', padding: '40px 16px' }}>
+    <div style={{ minHeight: '100vh', background: '#f0f2f5', padding: '40px 16px' }}>
       <Row justify="center">
         <Col xs={24} sm={18} md={12} lg={8} xl={6}>
           <Card
-            style={{
-              borderRadius: 16,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-              padding: '24px',
-            }}
-            bodyStyle={{ padding: 0 }}
+            style={{ borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+            bodyStyle={{ padding: 24 }}
           >
+            {/* Логотип */}
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <div>
-                <svg width="48" height="48" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="app-logo">
-                <rect width="64" height="64" rx="16" fill="#0078D4"/>
-                <path d="M20 32L28 40L44 24" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M32 20V44" stroke="white" strokeWidth="4" strokeLinecap="round"/>
-              </svg>
-              </div>
-              <Title level={2} style={{ marginTop: 12, color: '#1a1a1a' }}>
-                CopilotX
-              </Title>
+              <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="64" height="64" rx="16" fill="#0078D4"/>
+              <path d="M20 32L28 40L44 24" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M32 20V44" stroke="white" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+              <Title level={2} style={{ margin: 0 }}>CopilotX</Title>
             </div>
 
-            {}
-            <Tabs
-              activeKey={activeTab}
-              onChange={setActiveTab}
-              centered
-              size="large"
-              tabBarStyle={{ marginBottom: 30 }}
-            >
+            {/* Табы */}
+            <Tabs activeKey={activeTab} onChange={setActiveTab} centered size="large">
               <TabPane tab="Регистрация" key="register" />
               <TabPane tab="Вход" key="login" />
             </Tabs>
 
+            {/* Формы */}
             {activeTab === 'register' ? (
-              <Form form={form} onFinish={onFinish} layout="horizontal" size="large">
+              <Form form={form} onFinish={handleRegister} layout="vertical" size="large">
                 <Form.Item
                   name="login"
                   label="Логин"
                   rules={[{ required: true, message: 'Введите логин' }]}
                 >
-                  <Input prefix={<UserOutlined />} placeholder="Введите логин" />
+                  <Input prefix={<UserOutlined />} placeholder="Логин" />
                 </Form.Item>
 
-                
                 <Form.Item
                   name="password"
                   label="Пароль"
                   rules={[{ required: true, message: 'Введите пароль' }]}
                 >
-                  <Input.Password prefix={<LockOutlined />} placeholder="••••••••" />
+                  <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
                 </Form.Item>
 
                 
-
-                <Form.Item style={{ marginBottom: 0 }}>
-                  <Button type="primary" htmlType="submit" block size="large" style={{ borderRadius: 8 }}>
-                    Зарегистрироваться
-                  </Button>
-                </Form.Item>
+<Button type="primary" htmlType="submit" block style={{ borderRadius: 8 }}>
+                  Зарегистрироваться
+                </Button>
               </Form>
             ) : (
-              <Form onFinish={onLogin} layout="horizontal" size="large">
+              <Form onFinish={handleLogin} layout="vertical" size="large">
                 <Form.Item
                   name="login"
                   rules={[{ required: true, message: 'Введите логин' }]}
@@ -99,17 +93,15 @@ const Authorization = () => {
                   <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
                 </Form.Item>
 
-                <Form.Item style={{ marginBottom: 0 }}>
-                  <Button type="primary" htmlType="submit" block size="large" style={{ borderRadius: 8 }}>
-                    Войти
-                  </Button>
-                </Form.Item>
+                <Button type="primary" htmlType="submit" block style={{ borderRadius: 8 }}>
+                  Войти
+                </Button>
               </Form>
             )}
 
-            {/* === Назад === */}
-            <div style={{ marginTop: 24, textAlign: 'left' }}>
-              <Button type="text" icon={<ArrowLeftOutlined />} href="/">
+            {/* Назад */}
+            <div style={{ marginTop: 24 }}>
+              <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/')}>
                 Назад
               </Button>
             </div>

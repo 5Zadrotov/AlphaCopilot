@@ -1,17 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {Input, Button, Avatar, List, Typography, Space, Tag, Divider, Dropdown, message, Switch,} from 'antd';
-import {SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined,MoreOutlined, CopyOutlined, DeleteOutlined, EditOutlined,GlobalOutlined, MailOutlined, GithubOutlined, GoogleOutlined,CalendarOutlined, PlusOutlined,
+import {
+  Input,
+  Button,
+  Avatar,
+  List,
+  Typography,
+  Space,
+  Tag,
+  Divider,
+  Dropdown,
+  message,
+} from 'antd';
+import {
+  SendOutlined,
+  UserOutlined,
+  RobotOutlined,
+  PaperClipOutlined,
+  MoreOutlined,
+  CopyOutlined,
+  DeleteOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import FileUpload from './FileUpload';
 import AgentSelector from './MCP';
 import './ChatInterface.css';
 
-
-const { TextArea } = Input;
+// Исправленный импорт TextArea (для Ant Design v5+)
+const TextArea = Input.TextArea;
 const { Text } = Typography;
 
 const getUserChatsKey = (userId) => `sorilotx-chat-history-${userId}`;
-
 
 const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser }) => {
   const [messages, setMessages] = useState({});
@@ -22,17 +40,28 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const messagesEndRef = useRef(null);
-// === Загрузка истории и непрочитанных ===
+
+  // === Загрузка истории ===
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setMessages({});
+      return;
+    }
     const key = getUserChatsKey(currentUser.id);
     const saved = localStorage.getItem(key);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      Object.keys(parsed).forEach(k => {
-        parsed[k] = parsed[k].map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
-      });
-      setMessages(parsed);
+      try {
+        const parsed = JSON.parse(saved);
+        Object.keys(parsed).forEach(k => {
+          parsed[k] = parsed[k].map(m => ({
+            ...m,
+            timestamp: new Date(m.timestamp)
+          }));
+        });
+        setMessages(parsed);
+      } catch (e) {
+        console.error('Ошибка загрузки чата:', e);
+      }
     }
 
     const unread = localStorage.getItem('sorilotx-unread-categories');
@@ -46,20 +75,30 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     }
   }, [messages, currentUser]);
 
-  // === Пометка категории как прочитанной ===
+  // === Пометка как прочитано ===
   useEffect(() => {
     if (activeCategory && unreadCategories.has(activeCategory)) {
       const newUnread = new Set(unreadCategories);
       newUnread.delete(activeCategory);
       setUnreadCategories(newUnread);
       localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
-      onUnreadUpdate?.(newUnread.size);
+      if (onUnreadUpdate) {
+        onUnreadUpdate(newUnread.size);
+      }
     }
   }, [activeCategory, unreadCategories, onUnreadUpdate]);
 
-  // === Скролл вниз ===
-  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  useEffect(() => scrollToBottom(), [messages[activeCategory]]);
+  // === Скролл вниз — ИСПРАВЛЕНО: проверка на наличие сообщений ===
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const currentMsgs = messages[activeCategory];
+    if (currentMsgs && currentMsgs.length > 0) {
+      scrollToBottom();
+    }
+  }, [activeCategory, messages]);
 
   // === Приветственное сообщение ===
   useEffect(() => {
@@ -72,41 +111,29 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
       timestamp: new Date(),
     };
     setMessages(prev => ({ ...prev, [activeCategory]: [welcome] }));
-  }, [activeCategory, categories, messages, currentUser]);
+  }, [activeCategory, categories, currentUser]);
 
   const getWelcomeMessage = (id, name) => {
     const map = {
-      general: 'Здравствуйте! Я СорilotX - ваш ИИ-помощник для бизнеса. Задайте любой вопрос, и я постараюсь помочь!',
-      finance: `Добро пожаловать в раздел "${name}"! Здесь я могу помочь с вопросами налогов, финансового планирования, отчетности и оптимизации расходов. Что вас интересует?`,
-      marketing: `Добро пожаловать в раздел "${name}"! Готов помочь с маркетинговыми стратегиями, продвижением в соцсетях, привлечением клиентов и аналитикой. Что вас волнует?`,
-      legal: `Добро пожаловать в раздел "${name}"! Могу помочь с юридическими вопросами: договоры, права предпринимателей, compliance и регулирование. Чем могу помочь?`,
-      hr: `Добро пожаловать в раздел "${name}"! Здесь я могу помочь с вопросами найма, управления персоналом, мотивации сотрудников и HR-процессами. Что вас интересует?`,
+      general: 'Здравствуйте! Я СорilotX — ваш ИИ-помощник для бизнеса. Задайте любой вопрос!',
+      finance: `Добро пожаловать в раздел "${name}"! Помогу с налогами, отчётностью и финансами.`,
+      marketing: `Добро пожаловать в раздел "${name}"! Готов помочь с продвижением и клиентами.`,
+      legal: `Добро пожаловать в раздел "${name}"! Юридические вопросы — моя специализация.`,
+      hr: `Добро пожаловать в раздел "${name}"! Помогу с персоналом и мотивацией.`,
     };
     return map[id] || map.general;
   };
-
-  // === УДАЛЕНИЕ (со всем диалогом ниже) ===
-  const handleDeleteMessage = (id) => {
-    setMessages(prev => {
-      const msgs = prev[activeCategory] || [];
-      const idx = msgs.findIndex(m => m.id === id);
-      if (idx === -1) return prev;
-      return { ...prev, [activeCategory]: msgs.slice(0, idx) };
-    });
-    message.success('Сообщение и диалог ниже удалены');
-  };
-
-  // === КОПИРОВАНИЕ ===
+// === Копирование ===
   const handleCopyMessage = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      message.success('Текст скопирован');
+      message.success('Скопировано!');
     } catch {
       message.error('Не удалось скопировать');
     }
   };
 
-  // === РЕДАКТИРОВАНИЕ ===
+  // === Редактирование ===
   const startEdit = (id, text) => {
     setEditingId(id);
     setEditValue(text);
@@ -120,7 +147,7 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     }
     setMessages(prev => {
       const msgs = prev[activeCategory] || [];
-const idx = msgs.findIndex(m => m.id === editingId);
+      const idx = msgs.findIndex(m => m.id === editingId);
       if (idx === -1) return prev;
       const updated = [...msgs];
       updated[idx] = { ...updated[idx], text: trimmed, edited: true };
@@ -144,6 +171,17 @@ const idx = msgs.findIndex(m => m.id === editingId);
     }
   };
 
+  // === Удаление ===
+  const handleDeleteMessage = (id) => {
+    setMessages(prev => {
+      const msgs = prev[activeCategory] || [];
+      const idx = msgs.findIndex(m => m.id === id);
+      if (idx === -1) return prev;
+      return { ...prev, [activeCategory]: msgs.slice(0, idx) };
+    });
+    message.success('Сообщение и ответы удалены');
+  };
+
   // === Меню действий ===
   const MessageActions = ({ message }) => {
     const items = [
@@ -159,7 +197,7 @@ const idx = msgs.findIndex(m => m.id === editingId);
 
     return (
       <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
-        <Button type="text" icon={<MoreOutlined />} size="small" className="message-actions-btn" />
+        <Button type="text" icon={<MoreOutlined />} size="small" />
       </Dropdown>
     );
   };
@@ -177,103 +215,95 @@ const idx = msgs.findIndex(m => m.id === editingId);
     setShowFileUpload(false);
 
     setTimeout(() => {
-      const bot = { id: Date.now() + 1, text: 'Файлы получены и анализируются.', sender: 'bot', timestamp: new Date() };
+      const bot = {
+        id: Date.now() + 1,
+        text: 'Файлы получены и анализируются.',
+        sender: 'bot',
+        timestamp: new Date()
+      };
       setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), bot] }));
     }, 2000);
   };
 
   // === Отправка сообщения ===
   const handleSend = () => {
+    if (!currentUser) {
+      message.error('Войдите в систему');
+      return;
+    }
     if (!inputValue.trim()) return;
-    const msg = { id: Date.now(), text: inputValue.trim(), sender: 'user', timestamp: new Date() };
-    setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), msg] }));
+
+    const msg = {
+      id: Date.now(),
+      text: inputValue.trim(),
+      sender: 'user',
+      timestamp: new Date()
+    };
+    setMessages(prev => ({
+      ...prev,
+      [activeCategory]: [...(prev[activeCategory] || []), msg]
+    }));
     setInputValue('');
     setLoading(true);
 
     // Помечаем другие категории как непрочитанные
+    let newCount = 0;
     categories.forEach(cat => {
-      if (cat.id !== activeCategory && !unreadCategories.has(cat.id)) {
-        const newUnread = new Set(unreadCategories);
-        newUnread.add(cat.id);
-        setUnreadCategories(newUnread);
-        localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
-        onUnreadUpdate?.(newUnread.size);
-      }
+      if (cat.id !== activeCategory) newCount++;
     });
+    if (onUnreadUpdate) {
+      onUnreadUpdate(newCount);
+    }
 
+    // Ответ бота
     setTimeout(() => {
-      const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inputValue), sender: 'bot', timestamp: new Date() };
-      setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), bot] }));
+      const bot = {
+        id: Date.now() + 1,
+        text: getCategoryResponse(activeCategory, inputValue),
+        sender: 'bot',
+        timestamp: new Date()
+      };
+      setMessages(prev => ({
+        ...prev,
+        [activeCategory]: [...(prev[activeCategory] || []), bot]
+      }));
       setLoading(false);
     }, 1000 + Math.random() * 1000);
   };
-
-  // === Умные ответы бота ===
-  const getCategoryResponse = (id, msg) => {
+const getCategoryResponse = (id, msg) => {
     const lower = msg.toLowerCase();
     const res = {
-      finance: {
-        default: 'Я помогу с финансовыми вопросами. Уточните, пожалуйста.',
-        tax: 'Налоговые вопросы — моя специализация. Опишите ситуацию.',
-        report: 'Готов помочь с составлением отчётности.',
-        planning: 'Финансовое планирование — ключ к успеху. Расскажите о целях.',
-      },
-      marketing: {
-        default: 'Маркетинг — это искусство. Что именно вас интересует?',
-        social: 'SMM — мощный инструмент. Нужна стратегия?',
-        promotion: 'Продвижение: от контента до рекламы. Готов помочь.',
-        clients: 'Привлечение клиентов — приоритет. Есть ли воронка?',
-},
-      legal: {
-        default: 'Юридическая поддержка для бизнеса. Задайте вопрос.',
-        contract: 'Договоры должны быть железными. Пришлите шаблон?',
-        rights: 'Права предпринимателя — основа. В чём проблема?',
-        compliance: 'Compliance — это не формальность. Нужен аудит?',
-      },
-      hr: {
-        default: 'HR — сердце компании. Чем помочь?',
-        hiring: 'Найм — это инвестиция. Ищем таланты?',
-        management: 'Управление персоналом — это система. Нужны KPI?',
-        motivation: 'Мотивация = производительность. Есть ли программа?',
-      },
-      general: { default: 'Спасибо за вопрос! Чем могу помочь?' },
+      finance: { default: 'Помогу с финансами. Уточните вопрос.' },
+      marketing: { default: 'Маркетинг — это искусство. Что вас интересует?' },
+      legal: { default: 'Юридическая поддержка. Задайте вопрос.' },
+      hr: { default: 'HR — сердце компании. Чем помочь?' },
+      general: { default: 'Спасибо за вопрос! Чем могу помочь?' }
     };
-
-    const cat = res[id] || res.general;
-    if (lower.includes('налог') ||  lower.includes('налоги')) return cat.tax  || cat.default;
-    if (lower.includes('отчет')  || lower.includes('отчёт')) return cat.report  || cat.default;
-    if (lower.includes('план')  || lower.includes('бюджет')) return cat.planning ||  cat.default;
-    if (lower.includes('соцсеть')  || lower.includes('реклама')) return cat.social  || cat.default;
-    if (lower.includes('клиент')) return cat.clients || cat.default;
-    if (lower.includes('договор')) return cat.contract || cat.default;
-    if (lower.includes('право')) return cat.rights || cat.default;
-    if (lower.includes('найм')  || lower.includes('сотрудник')) return cat.hiring  || cat.default;
-    if (lower.includes('мотивация')) return cat.motivation || cat.default;
-
-    return cat.default;
+    return (res[id] || res.general).default;
   };
 
+  // === Безопасное получение сообщений ===
   const currentMessages = messages[activeCategory] || [];
   const currentCategory = categories.find(c => c.id === activeCategory);
 
   return (
     <div className="chat-interface">
-      {/* === Заголовок === */}
+      {/* Заголовок */}
       <div className="chat-header">
         <Space>
           <Avatar size="large" icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
           <div>
-            <Text strong style={{ fontSize: 18 }}>{currentCategory?.name || 'Общий чат'}</Text>
+            <Text strong style={{ fontSize: 18 }}>{currentCategory?.name || 'Чат'}</Text>
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>{currentCategory?.description || 'Задавайте вопросы'}</Text>
           </div>
         </Space>
-        <Tag color="blue">{currentMessages.length} сообщений</Tag>
+        <Tag color="blue">{currentMessages.length} сообщ.</Tag>
       </div>
 
       <Divider style={{ margin: '16px 0' }} />
 
-      {/* === Сообщения === */}
+      {/* Сообщения */}
       <div className="messages-container">
         <List
           dataSource={currentMessages}
@@ -282,28 +312,25 @@ const idx = msgs.findIndex(m => m.id === editingId);
               <Space align="start" size="middle" style={{ width: '100%' }}>
                 <Avatar
                   icon={message.sender === 'bot' ? <RobotOutlined /> : <UserOutlined />}
-                  style={{ backgroundColor: message.sender === 'bot' ? '#1890ff' : '#52c41a', flexShrink: 0 }}
+                  style={{ backgroundColor: message.sender === 'bot' ? '#1890ff' : '#52c41a' }}
                 />
                 <div className="message-content" style={{ flex: 1 }}>
                   {editingId === message.id ? (
-                    <div className="editing-wrapper">
-                      <Space.Compact style={{ width: '100%' }}>
-                        <TextArea
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          onKeyDown={handleEditKeyDown}
-                          autoSize={{ minRows: 1, maxRows: 6 }}
-                          autoFocus
-                          style={{ resize: 'none' }}
-                        />
-                        <Button type="primary" size="small" onClick={saveEdit}>Сохранить</Button>
-                        <Button size="small" onClick={cancelEdit}>Отмена</Button>
-                      </Space.Compact>
-                    </div>
+                    <Space.Compact style={{ width: '100%' }}>
+                      <TextArea
+                        value={editValue}
+                        onChange={e => setEditValue(e.target.value)}
+                        onKeyDown={handleEditKeyDown}
+                        autoSize={{ minRows: 1, maxRows: 6 }}
+                        autoFocus
+                      />
+                      <Button type="primary" size="small" onClick={saveEdit}>Сохранить</Button>
+                      <Button size="small" onClick={cancelEdit}>Отмена</Button>
+                    </Space.Compact>
                   ) : (
                     <>
                       <div className="message-header">
-<Text strong>{message.sender === 'bot' ? 'SoriPilotX' : 'Вы'}</Text>
+                        <Text strong>{message.sender === 'bot' ? 'SoriPilotX' : currentUser?.username || 'Вы'}</Text>
                         <MessageActions message={message} />
                       </div>
                       <Text className="message-text">
@@ -312,10 +339,7 @@ const idx = msgs.findIndex(m => m.id === editingId);
                       </Text>
                       {message.files && (
                         <div className="file-attachments">
-                          <PaperClipOutlined style={{ marginRight: 4 }} />
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            Прикреплено {message.files.length} файл(ов)
-                          </Text>
+                          <PaperClipOutlined /> {message.files.length} файл(ов)
                         </div>
                       )}
                       <div className="message-time">
@@ -330,29 +354,25 @@ const idx = msgs.findIndex(m => m.id === editingId);
         />
         {loading && (
           <div className="message-item bot-message">
-            <Space align="start" size="middle" style={{ width: '100%' }}>
+            <Space>
               <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
-              <Text type="secondary">СорilotX печатает...</Text>
+              <Text type="secondary">Печатает...</Text>
             </Space>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
-
-      {/* === Загрузка файлов === */}
+{/* Загрузка файлов */}
       {showFileUpload && <FileUpload onFilesUpload={handleFilesUpload} />}
 
-      {/* === Поле ввода с AgentSelector === */}
+      {/* Поле ввода */}
       <div className="input-container">
         <Space.Compact style={{ width: '100%' }}>
           <AgentSelector />
-          
-
-          {/* Поле ввода */}
           <TextArea
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={(e) => {
+            onChange={e => setInputValue(e.target.value)}
+            onKeyPress={e => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleSend();
@@ -360,22 +380,18 @@ const idx = msgs.findIndex(m => m.id === editingId);
             }}
             placeholder={`Сообщение в "${currentCategory?.name || 'чат'}"...`}
             autoSize={{ minRows: 1, maxRows: 4 }}
-            style={{ resize: 'none', borderRadius: 0 }}
+            disabled={!currentUser}
           />
           <Button
             icon={<PaperClipOutlined />}
             onClick={() => setShowFileUpload(!showFileUpload)}
-            style={{ borderRadius: 0 }}
           />
-
-          {/* Кнопка отправки */}
           <Button
             type="primary"
             icon={<SendOutlined />}
             onClick={handleSend}
             loading={loading}
-            disabled={!inputValue.trim()}
-            style={{ borderRadius: '0 8px 8px 0' }}
+            disabled={!currentUser || !inputValue.trim()}
           >
             Отправить
           </Button>
