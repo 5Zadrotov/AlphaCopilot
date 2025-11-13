@@ -25,29 +25,21 @@ namespace WebApp.Controllers
         public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Content))
-                return BadRequest(new { message = "Сообщение не может быть пустым" });
+            {
+                _logger.LogWarning("Empty chat message received.");
+                return BadRequest("РЎРѕРѕР±С‰РµРЅРёРµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј");
+            }
 
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-                return Unauthorized(new { message = "Неверный формат идентификатора пользователя" });
+                return Unauthorized(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             // idempotency key from header
             var idempotencyKey = Request.Headers.TryGetValue("Idempotency-Key", out Microsoft.Extensions.Primitives.StringValues value) ? value.FirstOrDefault() : null;
             if (!string.IsNullOrWhiteSpace(idempotencyKey))
             {
-                var idempotencyService = HttpContext.RequestServices.GetRequiredService<IIdempotencyService>();
-                var existing = await idempotencyService.TryGetAsync(idempotencyKey, userId);
-
-                if (existing.Found)
-                {
-                    // return cached JSON with status code
-                    return new ContentResult
-                    {
-                        Content = existing.ResponseJson,
-                        ContentType = "application/json",
-                        StatusCode = existing.StatusCode
-                    };
-                }
+                _logger.LogWarning("Unauthorized request or invalid user id in token.");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
             }
 
             // --- existing logic to find/create session and save userMessage ---
@@ -59,11 +51,11 @@ namespace WebApp.Controllers
                     Id = Guid.NewGuid(),
                     SessionId = Guid.NewGuid().ToString(),
                     UserId = userId,
-                    BusinessType = request?.Category ?? "Малый бизнес",
-                    SelectedCategory = request?.Category ?? "Общее",
+                    BusinessType = request?.Category ?? "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ",
+                    SelectedCategory = request?.Category ?? "пїЅпїЅпїЅпїЅпїЅ",
                     StartedAt = DateTime.UtcNow,
                     LastActivity = DateTime.UtcNow,
-                    Title = $"Сессия для {request?.Category ?? "Малый бизнес"}"
+                    Title = $"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ {request?.Category ?? "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ"}"
                 };
                 await _db.ChatSessions.AddAsync(session);
                 await _db.SaveChangesAsync();
@@ -78,11 +70,11 @@ namespace WebApp.Controllers
                         Id = Guid.NewGuid(),
                         SessionId = request.SessionId,
                         UserId = userId,
-                        BusinessType = request?.Category ?? "Малый бизнес",
-                        SelectedCategory = request?.Category ?? "Общее",
+                        BusinessType = request?.Category ?? "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ",
+                        SelectedCategory = request?.Category ?? "пїЅпїЅпїЅпїЅпїЅ",
                         StartedAt = DateTime.UtcNow,
                         LastActivity = DateTime.UtcNow,
-                        Title = $"Сессия для {request?.Category ?? "Малый бизнес"}"
+                        Title = $"пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ {request?.Category ?? "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ"}"
                     };
                     await _db.ChatSessions.AddAsync(session);
                     await _db.SaveChangesAsync();
@@ -112,7 +104,7 @@ namespace WebApp.Controllers
                     Id = Guid.NewGuid(),
                     SessionId = session.Id,
                     UserId = userId,
-                    Content = aiResponse ?? string.Empty,
+                    Content = aiResponse ?? "РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РѕС‚РІРµС‚Р°",
                     IsFromUser = false,
                     Category = request.Category,
                     Timestamp = DateTime.UtcNow
@@ -123,15 +115,15 @@ namespace WebApp.Controllers
                 _db.ChatSessions.Update(session);
                 await _db.SaveChangesAsync();
 
-                // LLM лог
+                // LLM пїЅпїЅпїЅ
                 try
                 {
                     await _llmLogService.CreateLogAsync(new LlmLog
                     {
                         Id = Guid.NewGuid(),
                         UserId = userId,
-                        RequestText = request.Content.Length > 2000 ? string.Concat(request.Content.AsSpan(0, 2000), "...") : request.Content,
-                        ResponseText = aiResponse?.Length > 4000 ? string.Concat(aiResponse.AsSpan(0, 4000), "...") : aiResponse ?? string.Empty,
+                        RequestText = request.Content.Length > 2000 ? request.Content.Substring(0, 2000) + "..." : request.Content,
+                        ResponseText = aiResponse?.Length > 4000 ? aiResponse.Substring(0, 4000) + "..." : aiResponse ?? "РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РѕС‚РІРµС‚Р°",
                         ModelUsed = null,
                         TokensInput = 0,
                         TokensOutput = 0
@@ -163,16 +155,7 @@ namespace WebApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while processing chat message for user {UserId}.", userId);
-                var err = new { message = $"Ошибка при получении ответа от AI: {ex.Message}" };
-                var errJson = System.Text.Json.JsonSerializer.Serialize(err, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
-
-                if (!string.IsNullOrWhiteSpace(Request.Headers["Idempotency-Key"]))
-                {
-                    var idempotency = HttpContext.RequestServices.GetRequiredService<IIdempotencyService>();
-                    await idempotency.SaveAsync(Request.Headers["Idempotency-Key"].FirstOrDefault() ?? string.Empty, userId, "POST", HttpContext.Request.Path, 500, errJson, TimeSpan.FromDays(1));
-                }
-
-                return StatusCode(500, err);
+                return StatusCode(500, $"РћС€РёР±РєР° РѕР±СЂР°Р±РѕС‚РєРё СЃРѕРѕР±С‰РµРЅРёСЏ AI: {ex.Message}");
             }
         }
 
@@ -181,15 +164,15 @@ namespace WebApp.Controllers
         public async Task<IActionResult> GetMessages([FromQuery] string sessionId, [FromQuery] int page = 1, [FromQuery] int pageSize = 50)
         {
             if (string.IsNullOrEmpty(sessionId))
-                return BadRequest(new { message = "sessionId обязателен" });
+                return BadRequest(new { message = "sessionId пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-                return Unauthorized(new { message = "Неверный формат идентификатора пользователя" });
+                return Unauthorized(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             var session = await _db.ChatSessions.AsNoTracking().FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
             if (session == null)
-                return NotFound(new { message = "Сессия не найдена" });
+                return NotFound(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             if (page < 1) page = 1;
             if (pageSize < 1) pageSize = 50;
@@ -217,17 +200,17 @@ namespace WebApp.Controllers
         public async Task<IActionResult> EditMessage(Guid messageId, [FromBody] EditMessageRequest request)
         {
             if (request is null || string.IsNullOrWhiteSpace(request.Content))
-                return BadRequest(new { message = "Content обязателен" });
+                return BadRequest(new { message = "Content пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
                 return Unauthorized();
 
             var message = await _db.ChatMessages.FirstOrDefaultAsync(m => m.Id == messageId);
-            if (message == null) return NotFound(new { message = "Сообщение не найдено" });
+            if (message == null) return NotFound(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
             if (message.UserId != userId) return Forbid();
 
-            if (!message.IsFromUser) return BadRequest(new { message = "Нельзя редактировать сообщение от AI" });
+            if (!message.IsFromUser) return BadRequest(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ AI" });
 
             message.Content = request.Content;
             message.Timestamp = DateTime.UtcNow;
@@ -247,7 +230,7 @@ namespace WebApp.Controllers
                 return Unauthorized();
 
             var message = await _db.ChatMessages.FirstOrDefaultAsync(m => m.Id == messageId);
-            if (message == null) return NotFound(new { message = "Сообщение не найдено" });
+            if (message == null) return NotFound(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
             if (message.UserId != userId) return Forbid();
 
             _db.ChatMessages.Remove(message);
@@ -264,11 +247,22 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
                 return Unauthorized();
 
-            // Простое сохранение фидбека в LlmLogs (как запись для аналитики)
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ LlmLogs (пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
             var feedbackText = $"Feedback rating={request.Rating}; comment={request.Comment}";
             try
             {
-                await _llmLogService.CreateLogAsync(new LlmLog
+                _logger.LogWarning("Unauthorized history request or invalid user id in token.");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
+            }
+
+            if (string.IsNullOrEmpty(sessionId))
+            {
+                var allSessions = _sessions
+                    .Where(s => s.Value.Any(m => m.UserId == userId))
+                    .OrderByDescending(s => s.Value.LastOrDefault()?.Timestamp)
+                    .FirstOrDefault();
+
+                if (allSessions.Key == Guid.Empty)
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
@@ -284,7 +278,8 @@ namespace WebApp.Controllers
                 _logger.LogWarning(ex, "Failed to persist feedback log.");
             }
 
-            return Ok(new { message = "Feedback saved" });
+            _logger.LogWarning("Requested history for non-existent session {SessionId} by user {UserId}.", sessionId, userId);
+            return NotFound("РЎРµСЃСЃРёСЏ РЅРµ РЅР°Р№РґРµРЅР°");
         }
     }
 }

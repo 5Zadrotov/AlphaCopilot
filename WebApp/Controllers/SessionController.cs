@@ -17,20 +17,20 @@ namespace WebApp.Controllers
         private readonly ApplicationDbContext _db = db;
         private readonly ILogger<SessionController> _logger = logger;
 
-        // GET api/Session/{sessionId}  (sessionId — публичный string SessionId)
+        // GET api/Session/{sessionId}  (sessionId пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ string SessionId)
         [HttpGet("{sessionId}")]
         public async Task<IActionResult> GetSession(string sessionId)
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
 
             var session = await _db.ChatSessions
                 .AsNoTracking()
                 .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
 
             if (session == null)
-                return NotFound(new { message = "Сессия не найдена" });
+                return NotFound(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             return Ok(new
             {
@@ -50,11 +50,11 @@ namespace WebApp.Controllers
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
 
             var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
             if (session == null)
-                return NotFound(new { message = "Сессия не найдена" });
+                return NotFound(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             var changed = false;
             if (!string.IsNullOrWhiteSpace(request.Title) && request.Title != session.Title)
@@ -84,7 +84,7 @@ namespace WebApp.Controllers
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to update session {SessionId} for user {UserId}.", sessionId, userId);
-                    return StatusCode(500, new { message = "Не удалось обновить сессию" });
+                    return StatusCode(500, new { message = "пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ" });
                 }
             }
 
@@ -106,15 +106,15 @@ namespace WebApp.Controllers
         {
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ");
 
             var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
             if (session == null)
-                return NotFound(new { message = "Сессия не найдена" });
+                return NotFound(new { message = "пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             try
             {
-                // Удаляем сообщения, связанные с сессией, затем саму сессию
+                // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
                 var messages = _db.ChatMessages.Where(m => m.SessionId == session.Id);
                 _db.ChatMessages.RemoveRange(messages);
                 _db.ChatSessions.Remove(session);
@@ -126,7 +126,7 @@ namespace WebApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to delete session {SessionId} for user {UserId}.", sessionId, userId);
-                return StatusCode(500, new { message = "Не удалось удалить сессию" });
+                return StatusCode(500, new { message = "пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ" });
             }
         }
 
@@ -137,7 +137,7 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 _logger.LogWarning("Unauthorized attempt to create session.");
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
             }
 
             var idempotencyKey = Request.Headers.TryGetValue("Idempotency-Key", out Microsoft.Extensions.Primitives.StringValues value) ? value.FirstOrDefault() : null;
@@ -160,11 +160,11 @@ namespace WebApp.Controllers
                 Id = Guid.NewGuid(),
                 SessionId = Guid.NewGuid().ToString(),
                 UserId = userId,
-                BusinessType = string.IsNullOrWhiteSpace(request?.BusinessType) ? "Малый бизнес" : request.BusinessType!,
-                SelectedCategory = "Общее",
+                BusinessType = string.IsNullOrWhiteSpace(request?.BusinessType) ? "РћР±С‰РёР№ Р±РёР·РЅРµСЃ" : request.BusinessType!,
+                SelectedCategory = "РћР±С‰РµРµ",
                 StartedAt = DateTime.UtcNow,
                 LastActivity = DateTime.UtcNow,
-                Title = $"Сессия для {request?.BusinessType ?? "Малый бизнес"}"
+                Title = $"РЎРµСЃСЃРёСЏ {request?.BusinessType ?? "РћР±С‰РёР№ Р±РёР·РЅРµСЃ"}"
             };
 
             try
@@ -172,18 +172,18 @@ namespace WebApp.Controllers
                 await _db.ChatSessions.AddAsync(session);
                 await _db.SaveChangesAsync();
 
-                var resp = new { sessionId = session.SessionId, message = "Новая сессия создана" };
+                var resp = new { sessionId = session.SessionId, message = "пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ" };
                 var json = System.Text.Json.JsonSerializer.Serialize(resp, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
                 if (!string.IsNullOrWhiteSpace(idempotencyKey))
                     await HttpContext.RequestServices.GetRequiredService<IIdempotencyService>().SaveAsync(idempotencyKey, userId, "POST", HttpContext.Request.Path, 200, json, TimeSpan.FromDays(7));
 
                 _logger.LogInformation("Created new chat session {SessionId} for user {UserId}.", session.SessionId, userId);
-                return Ok(resp);
+                return Ok(new { sessionId = session.SessionId, message = "РЎРµСЃСЃРёСЏ СЃРѕР·РґР°РЅР° СѓСЃРїРµС€РЅРѕ" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create chat session for user {UserId}.", userId);
-                return StatusCode(500, "Не удалось создать сессию");
+                return StatusCode(500, "РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ СЃРµСЃСЃРёРё");
             }
         }
 
@@ -194,7 +194,7 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 _logger.LogWarning("Unauthorized attempt to list sessions.");
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
             }
 
             try
@@ -221,7 +221,7 @@ namespace WebApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to retrieve sessions for user {UserId}.", userId);
-                return StatusCode(500, "Не удалось получить список сессий");
+                return StatusCode(500, "РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° СЃРµСЃСЃРёР№");
             }
         }
     }

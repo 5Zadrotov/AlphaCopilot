@@ -14,11 +14,11 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Login([FromBody] AuthRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-                return BadRequest(new { message = "Email и пароль обязательны для заполнения." });
+                return BadRequest(new { message = "Email Рё РїР°СЂРѕР»СЊ РѕР±СЏР·Р°С‚РµР»СЊРЅС‹" });
 
             var authResponse = await _authService.AuthenticateAsync(request.Email, request.Password);
             if (authResponse == null)
-                return Unauthorized(new { message = "Неверный email или пароль" });
+                return Unauthorized(new { message = "РќРµРІРµСЂРЅС‹Р№ email РёР»Рё РїР°СЂРѕР»СЊ" });
 
             return Ok(authResponse);
         }
@@ -29,22 +29,22 @@ namespace WebApp.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(new
                 {
-                    message = "Некорректные данные запроса",
+                    message = "РћС€РёР±РєР° РІР°Р»РёРґР°С†РёРё",
                     errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage))
                 });
 
             var success = _authService.RegisterUser(request.Email, request.Password, request.FullName, out string message);
             if (!success)
             {
-                if (message.Contains("занято") || message.Contains("уже существует"))
+                if (message.Contains("СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚") || message.Contains("already exists"))
                     return Conflict(new { message });
-                if (message.Contains("некорректный") || message.Contains("невалидный") || message.Contains("короткий"))
+                if (message.Contains("РїР°СЂРѕР»СЊ") || message.Contains("email") || message.Contains("РІР°Р»РёРґР°С†РёСЏ"))
                     return BadRequest(new { message });
-                return StatusCode(500, new { message = $"Ошибка сервера: {message}" });
+                return StatusCode(500, new { message = $"РћС€РёР±РєР° СЃРµСЂРІРµСЂР°: {message}" });
             }
 
             return CreatedAtAction(nameof(Login), new { email = request.Email },
-                new { message = "Регистрация прошла успешно", email = request.Email });
+                new { message = "РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ СѓСЃРїРµС€РЅРѕ Р·Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅ", email = request.Email });
         }
 
         // POST api/auth/refresh
