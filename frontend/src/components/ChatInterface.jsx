@@ -37,9 +37,10 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
+  const [isInitialized, setIsInitialized] = useState(false); // Флаг инициализации
   const messagesEndRef = useRef(null);
 
-  // === ПРОСТАЯ И НАДЕЖНАЯ Загрузка истории ===
+  // === Загрузка истории ===
   useEffect(() => {
     console.log('=== ЗАГРУЗКА ИСТОРИИ ===');
     console.log('currentUser:', currentUser);
@@ -47,6 +48,7 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     if (!currentUser) {
       console.log('Нет пользователя - очищаем сообщения');
       setMessages({});
+      setIsInitialized(false);
       return;
     }
 
@@ -73,23 +75,25 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
 
         console.log('Восстановленные сообщения:', restoredMessages);
         setMessages(restoredMessages);
+        setIsInitialized(true); // Помечаем что инициализация завершена
       } else {
         console.log('Нет сохраненных данных - инициализируем пустой объект');
         setMessages({});
+        setIsInitialized(true);
       }
     } catch (error) {
       console.error('ОШИБКА загрузки:', error);
       setMessages({});
+      setIsInitialized(true);
     }
   }, [currentUser]);
 
-  // === ПРОСТОЕ И НАДЕЖНОЕ Сохранение истории ===
+  // === Сохранение истории ===
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !isInitialized) return;
 
     console.log('=== СОХРАНЕНИЕ ИСТОРИИ ===');
     console.log('Текущие сообщения:', messages);
-    console.log('Ключ для сохранения:', getUserChatsKey(currentUser.id));
 
     if (Object.keys(messages).length > 0) {
       try {
@@ -101,24 +105,15 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
         console.error('❌ ОШИБКА сохранения:', error);
       }
     }
-  }, [messages, currentUser]);
+  }, [messages, currentUser, isInitialized]);
 
-  // === Скролл вниз ===
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
+  // === Приветственное сообщение ТОЛЬКО для новых категорий ===
   useEffect(() => {
-    scrollToBottom();
-  }, [messages[activeCategory]]);
-
-  // === Приветственное сообщение ===
-  useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser || !isInitialized) return;
     
-    // Создаем приветственное сообщение только если категория не существует
+    // Создаем приветственное сообщение только если категория полностью новая
     if (!messages[activeCategory]) {
-      console.log('Создаем приветственное сообщение для категории:', activeCategory);
+      console.log('Создаем приветственное сообщение для новой категории:', activeCategory);
       
       const cat = categories.find(c => c.id === activeCategory);
       const welcome = {
@@ -137,7 +132,7 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
         return newMessages;
       });
     }
-  }, [activeCategory, categories, currentUser, messages]);
+  }, [activeCategory, categories, currentUser, messages, isInitialized]);
 
   const getWelcomeMessage = (id, name) => {
     const map = {
@@ -149,6 +144,15 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     };
     return map[id] || map.general;
   };
+
+  // === Скролл вниз ===
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages[activeCategory]]);
 
   // === Копирование ===
   const handleCopyMessage = async (text) => {
@@ -244,7 +248,6 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
         ...prev, 
         [activeCategory]: [...(prev[activeCategory] || []), msg] 
       };
-      console.log('Сообщения после загрузки файлов:', newMessages);
       return newMessages;
     });
     
@@ -263,7 +266,6 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
           ...prev, 
           [activeCategory]: [...(prev[activeCategory] || []), bot] 
         };
-        console.log('Сообщения после ответа бота:', newMessages);
         return newMessages;
       });
     }, 2000);
@@ -284,15 +286,12 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
       timestamp: new Date()
     };
 
-    console.log('Отправка сообщения:', userMessage);
-
     setMessages(prev => {
       const currentCategoryMessages = prev[activeCategory] || [];
       const newMessages = {
         ...prev,
         [activeCategory]: [...currentCategoryMessages, userMessage]
       };
-      console.log('Сообщения после отправки пользователя:', newMessages);
       return newMessages;
     });
     
@@ -314,7 +313,6 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
           ...prev,
           [activeCategory]: [...currentCategoryMessages, botMessage]
         };
-        console.log('Сообщения после ответа бота:', newMessages);
         return newMessages;
       });
       
