@@ -24,7 +24,7 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 _logger.LogWarning("Unauthorized attempt to create session.");
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
             }
 
             var session = new ChatSession
@@ -32,11 +32,11 @@ namespace WebApp.Controllers
                 Id = Guid.NewGuid(),
                 SessionId = Guid.NewGuid().ToString(),
                 UserId = userId,
-                BusinessType = string.IsNullOrWhiteSpace(request?.BusinessType) ? "Малый бизнес" : request.BusinessType!,
-                SelectedCategory = "Общее",
+                BusinessType = string.IsNullOrWhiteSpace(request?.BusinessType) ? "РћР±С‰РёР№ Р±РёР·РЅРµСЃ" : request.BusinessType!,
+                SelectedCategory = "РћР±С‰РµРµ",
                 StartedAt = DateTime.UtcNow,
                 LastActivity = DateTime.UtcNow,
-                Title = $"Сессия для {request?.BusinessType ?? "Малый бизнес"}"
+                Title = $"РЎРµСЃСЃРёСЏ {request?.BusinessType ?? "РћР±С‰РёР№ Р±РёР·РЅРµСЃ"}"
             };
 
             try
@@ -45,12 +45,12 @@ namespace WebApp.Controllers
                 await _db.SaveChangesAsync();
 
                 _logger.LogInformation("Created new chat session {SessionId} for user {UserId}.", session.SessionId, userId);
-                return Ok(new { sessionId = session.SessionId, message = "Новая сессия создана" });
+                return Ok(new { sessionId = session.SessionId, message = "РЎРµСЃСЃРёСЏ СЃРѕР·РґР°РЅР° СѓСЃРїРµС€РЅРѕ" });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create chat session for user {UserId}.", userId);
-                return StatusCode(500, "Не удалось создать сессию");
+                return StatusCode(500, "РћС€РёР±РєР° СЃРѕР·РґР°РЅРёСЏ СЃРµСЃСЃРёРё");
             }
         }
 
@@ -61,7 +61,7 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 _logger.LogWarning("Unauthorized attempt to list sessions.");
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
             }
 
             try
@@ -88,7 +88,7 @@ namespace WebApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to retrieve sessions for user {UserId}.", userId);
-                return StatusCode(500, "Не удалось получить список сессий");
+                return StatusCode(500, "РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ СЃРїРёСЃРєР° СЃРµСЃСЃРёР№");
             }
         }
     }

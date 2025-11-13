@@ -26,14 +26,14 @@ namespace WebApp.Controllers
             if (request == null || string.IsNullOrWhiteSpace(request.Content))
             {
                 _logger.LogWarning("Empty chat message received.");
-                return BadRequest("Сообщение не может быть пустым");
+                return BadRequest("РЎРѕРѕР±С‰РµРЅРёРµ РЅРµ РјРѕР¶РµС‚ Р±С‹С‚СЊ РїСѓСЃС‚С‹Рј");
             }
 
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 _logger.LogWarning("Unauthorized request or invalid user id in token.");
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
             }
 
             if (string.IsNullOrEmpty(request.SessionId) || !Guid.TryParse(request.SessionId, out Guid sessionId))
@@ -69,7 +69,7 @@ namespace WebApp.Controllers
                 {
                     Id = Guid.NewGuid(),
                     UserId = userId,
-                    Content = aiResponse ?? "err",
+                    Content = aiResponse ?? "РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РѕС‚РІРµС‚Р°",
                     IsFromUser = false,
                     Category = request.Category,
                     Timestamp = DateTime.UtcNow
@@ -83,7 +83,7 @@ namespace WebApp.Controllers
                         Id = Guid.NewGuid(),
                         UserId = userId,
                         RequestText = request.Content.Length > 2000 ? request.Content.Substring(0, 2000) + "..." : request.Content,
-                        ResponseText = aiResponse?.Length > 4000 ? aiResponse.Substring(0, 4000) + "..." : aiResponse ?? "err",
+                        ResponseText = aiResponse?.Length > 4000 ? aiResponse.Substring(0, 4000) + "..." : aiResponse ?? "РћС€РёР±РєР° РїРѕР»СѓС‡РµРЅРёСЏ РѕС‚РІРµС‚Р°",
                         ModelUsed = null,
                         TokensInput = 0,
                         TokensOutput = 0
@@ -104,7 +104,7 @@ namespace WebApp.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while processing chat message for user {UserId}.", userId);
-                return StatusCode(500, $"Ошибка при получении ответа от AI: {ex.Message}");
+                return StatusCode(500, $"РћС€РёР±РєР° РѕР±СЂР°Р±РѕС‚РєРё СЃРѕРѕР±С‰РµРЅРёСЏ AI: {ex.Message}");
             }
         }
 
@@ -115,7 +115,7 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
             {
                 _logger.LogWarning("Unauthorized history request or invalid user id in token.");
-                return Unauthorized("Неверный формат идентификатора пользователя");
+                return Unauthorized("РќРµРІРµСЂРЅС‹Р№ С‚РѕРєРµРЅ Р°РІС‚РѕСЂРёР·Р°С†РёРё");
             }
 
             if (string.IsNullOrEmpty(sessionId))
@@ -149,7 +149,7 @@ namespace WebApp.Controllers
             }
 
             _logger.LogWarning("Requested history for non-existent session {SessionId} by user {UserId}.", sessionId, userId);
-            return NotFound("Сессия не найдена");
+            return NotFound("РЎРµСЃСЃРёСЏ РЅРµ РЅР°Р№РґРµРЅР°");
         }
     }
 }
