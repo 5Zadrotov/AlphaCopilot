@@ -31,7 +31,7 @@ internal partial class Program
         var jwtTokenExpirationHours = int.Parse(builder.Configuration["Jwt:TokenExpirationHours"]!);
 
         // Register services
-        builder.Services.AddSingleton<IAuthService, AuthService>();
+        builder.Services.AddScoped<IAuthService, AuthService>(); // <- Scoped, чтобы работать с DbContext
         builder.Services.AddScoped<IDataService, DataService>();
         builder.Services.AddScoped<IPromptTemplateService, PromptTemplateService>();
 

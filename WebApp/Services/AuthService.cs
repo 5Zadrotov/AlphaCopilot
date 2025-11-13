@@ -1,32 +1,19 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using WebApp.Data;
 using WebApp.Interfaces;
 using WebApp.Models.DbModels;
 using WebApp.Models.Dto;
 
 namespace WebApp.Services
 {
-    public class AuthService : IAuthService
+    public class AuthService(ApplicationDbContext db, IConfiguration configuration) : IAuthService
     {
-        private readonly List<User> _users = [];
-        private readonly IConfiguration _configuration;
-
-        public AuthService(IConfiguration configuration)
-        {
-            _configuration = configuration;
-
-            // Демо-пользователь для тестирования
-            _users.Add(new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "demo@example.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("demo123"),
-                FullName = "Демо Пользователь",
-                CreatedAt = DateTime.UtcNow
-            });
-        }
+        private readonly ApplicationDbContext _db = db;
+        private readonly IConfiguration _configuration = configuration;
 
         public AuthResponse? Authenticate(string email, string password)
         {
@@ -35,7 +22,7 @@ namespace WebApp.Services
                 if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
                     return null;
 
-                var user = _users.FirstOrDefault(u => u.Email == email);
+                var user = _db.Users.AsNoTracking().FirstOrDefault(u => u.Email == email);
                 if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                     return null;
 
@@ -70,7 +57,7 @@ namespace WebApp.Services
                     message = "Пароль должен содержать не менее 6 символов.";
                     return false;
                 }
-                if (_users.Any(u => u.Email == email))
+                if (_db.Users.Any(u => u.Email == email))
                 {
                     message = "Пользователь с таким email уже существует.";
                     return false;
@@ -90,7 +77,9 @@ namespace WebApp.Services
                     CreatedAt = DateTime.UtcNow
                 };
 
-                _users.Add(newUser);
+                _db.Users.Add(newUser);
+                _db.SaveChanges();
+
                 message = "Пользователь успешно зарегистрирован.";
                 return true;
             }

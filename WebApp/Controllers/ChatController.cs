@@ -30,11 +30,11 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(request.SessionId) || !Guid.TryParse(request.SessionId, out Guid sessionId))
             {
                 sessionId = Guid.NewGuid();
-                _sessions[sessionId] = new List<ChatMessage>();
+                _sessions[sessionId] = [];
             }
             else if (!_sessions.ContainsKey(sessionId))
             {
-                _sessions[sessionId] = new List<ChatMessage>();
+                _sessions[sessionId] = [];
             }
 
             var userMessage = new ChatMessage
@@ -96,7 +96,7 @@ namespace WebApp.Controllers
                 if (allSessions.Key == Guid.Empty)
                 {
                     var newSessionId = Guid.NewGuid();
-                    _sessions[newSessionId] = new List<ChatMessage>();
+                    _sessions[newSessionId] = [];
                     return Ok(new { sessionId = newSessionId.ToString(), messages = new List<ChatMessage>() });
                 }
 

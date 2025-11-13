@@ -10,6 +10,7 @@ namespace WebApp.Services
 {
     public class OpenRouterService : IAiService
     {
+        private static readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
 
@@ -47,7 +48,7 @@ namespace WebApp.Services
                         MaxTokens = 1000
                     };
 
-                    var json = JsonSerializer.Serialize(request, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                    var json = JsonSerializer.Serialize(request, _jsonSerializerOptions);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                     var response = await _httpClient.PostAsync("https://openrouter.ai/api/v1/chat/completions", content);

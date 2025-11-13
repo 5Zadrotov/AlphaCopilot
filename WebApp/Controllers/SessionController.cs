@@ -10,7 +10,7 @@ namespace WebApp.Controllers
     [Authorize]
     public class SessionController : ControllerBase
     {
-        private static readonly Dictionary<Guid, ChatSession> _sessions = new();
+        private static readonly Dictionary<Guid, ChatSession> _sessions = [];
 
         [HttpPost("new")]
         public IActionResult NewSession([FromBody] NewChatSessionRequest request)
