@@ -8,9 +8,7 @@ import {
 const { Text } = Typography;
 
 const AgentSelector = () => {
-  const [open, setOpen] = useState(false);
-
-  // === Состояния переключателей ===
+  // Загружаем состояние из localStorage (по умолчанию: web — включён, остальные — выключены)
   const [webSearchEnabled, setWebSearchEnabled] = useState(() => {
     const saved = localStorage.getItem('agent-web');
     return saved === null ? true : saved === 'true';
@@ -36,41 +34,73 @@ const AgentSelector = () => {
     return saved === 'true';
   });
 
-  // === Сохранение в localStorage ===
-  useEffect(() => localStorage.setItem('agent-web', webSearchEnabled), [webSearchEnabled]);
-  useEffect(() => localStorage.setItem('agent-gmail', gmailEnabled), [gmailEnabled]);
-  useEffect(() => localStorage.setItem('agent-github', githubEnabled), [githubEnabled]);
-  useEffect(() => localStorage.setItem('agent-drive', driveEnabled), [driveEnabled]);
-  useEffect(() => localStorage.setItem('agent-calendar', calendarEnabled), [calendarEnabled]);
+  // Сохраняем в localStorage при изменении
+  useEffect(() => {
+    localStorage.setItem('agent-web', webSearchEnabled);
+  }, [webSearchEnabled]);
 
-  // === Агенты ===
+  useEffect(() => {
+    localStorage.setItem('agent-gmail', gmailEnabled);
+  }, [gmailEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('agent-github', githubEnabled);
+  }, [githubEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('agent-drive', driveEnabled);
+  }, [driveEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('agent-calendar', calendarEnabled);
+  }, [calendarEnabled]);
+
   const agents = [
-    { key: 'web', label: 'Поиск в сети', icon: <GlobalOutlined />, enabled: webSearchEnabled, onToggle: () => setWebSearchEnabled(p => !p) },
-    { key: 'gmail', label: 'Gmail', icon: <MailOutlined />, enabled: gmailEnabled, onToggle: () => setGmailEnabled(p => !p) },
-    { key: 'github', label: 'GitHub', icon: <GithubOutlined />, enabled: githubEnabled, onToggle: () => setGithubEnabled(p => !p) },
-    { key: 'drive', label: 'Google Диск', icon: <GoogleOutlined />, enabled: driveEnabled, onToggle: () => setDriveEnabled(p => !p) },
-    { key: 'calendar', label: 'Google Календарь', icon: <CalendarOutlined />, enabled: calendarEnabled, onToggle: () => setCalendarEnabled(p => !p) },
+    {
+      key: 'web',
+      label: 'Поиск в сети',
+      icon: <GlobalOutlined />,
+      enabled: webSearchEnabled,
+      onToggle: () => setWebSearchEnabled(prev => !prev),
+    },
+    {
+      key: 'gmail',
+      label: 'Gmail',
+      icon: <MailOutlined />,
+      enabled: gmailEnabled,
+      onToggle: () => setGmailEnabled(prev => !prev),
+    },
+    {
+      key: 'github',
+      label: 'GitHub',
+      icon: <GithubOutlined />,
+      enabled: githubEnabled,
+      onToggle: () => setGithubEnabled(prev => !prev),
+    },
+    {
+      key: 'drive',
+      label: 'Google Диск',
+      icon: <GoogleOutlined />,
+      enabled: driveEnabled,
+      onToggle: () => setDriveEnabled(prev => !prev),
+    },
+    {
+      key: 'calendar',
+      label: 'Google Календарь',
+      icon: <CalendarOutlined />,
+      enabled: calendarEnabled,
+      onToggle: () => setCalendarEnabled(prev => !prev),
+    },
   ];
 
-  // === Меню ===
   const menuItems = [
     {
       key: 'header',
-      label: (
-        <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space>
-            <RobotOutlined style={{ color: '#1890ff' }} />
-            <Text strong>Агент</Text>
-          </Space>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {agents.some(a => a.enabled) ? 'Активен' : 'Выключен'}
-          </Text>
-        </Space>
-      ),
+
       disabled: true,
     },
     { type: 'divider' },
-    ...agents.map(agent => ({
+    ...agents.map((agent) => ({
       key: agent.key,
       label: (
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
@@ -82,7 +112,6 @@ const AgentSelector = () => {
             size="small"
             checked={agent.enabled}
             onChange={agent.onToggle}
-            onClick={(e) => e.stopPropagation()} // ← КЛЮЧ: не даём закрыться!
           />
         </Space>
       ),
@@ -98,25 +127,14 @@ const AgentSelector = () => {
       ),
     },
   ];
-
-  return (
+return (
     <Dropdown
       menu={{ items: menuItems }}
-      trigger={['contextMenu']} // ← Открываем только правым кликом (или программно)
-      open={open}
-onOpenChange={(nextOpen) => {
-        // Разрешаем только программное управление
-        if (!nextOpen) setOpen(false);
-      }}
+      trigger={['click']}
+      placement="topLeft"
       overlayStyle={{ width: 280 }}
-      // Отключаем стандартное поведение
-      getPopupContainer={trigger => trigger.parentElement}
     >
       <div
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(prev => !prev); // ← Переключаем вручную
-        }}
         style={{
           display: 'inline-flex',
           alignItems: 'center',
