@@ -1,18 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Input, Button, Avatar, List, Typography, Space, Tag, Divider, Dropdown, message,
-} from 'antd';
-import {
-  SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined,
-  MoreOutlined, CopyOutlined, DeleteOutlined, EditOutlined,
+import {Input, Button, Avatar, List, Typography, Space, Tag, Divider, Dropdown, message, Switch,} from 'antd';
+import {SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined,MoreOutlined, CopyOutlined, DeleteOutlined, EditOutlined,GlobalOutlined, MailOutlined, GithubOutlined, GoogleOutlined,CalendarOutlined, PlusOutlined,
 } from '@ant-design/icons';
 import FileUpload from './FileUpload';
+import AgentSelector from './MCP';
 import './ChatInterface.css';
+
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
 const getUserChatsKey = (userId) => `sorilotx-chat-history-${userId}`;
+
 
 const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser }) => {
   const [messages, setMessages] = useState({});
@@ -20,12 +19,10 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
   const [loading, setLoading] = useState(false);
   const [unreadCategories, setUnreadCategories] = useState(new Set());
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const [showVoiceMode, setShowVoiceMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const messagesEndRef = useRef(null);
-
-  // === Загрузка / Сохранение ===
+// === Загрузка истории и непрочитанных ===
   useEffect(() => {
     if (!currentUser) return;
     const key = getUserChatsKey(currentUser.id);
@@ -38,18 +35,18 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
       setMessages(parsed);
     }
 
-    // Загрузка непрочитанных
     const unread = localStorage.getItem('sorilotx-unread-categories');
     if (unread) setUnreadCategories(new Set(JSON.parse(unread)));
   }, [currentUser]);
 
+  // === Сохранение истории ===
   useEffect(() => {
     if (Object.keys(messages).length > 0 && currentUser) {
       localStorage.setItem(getUserChatsKey(currentUser.id), JSON.stringify(messages));
     }
   }, [messages, currentUser]);
 
-  // === Прочитано ===
+  // === Пометка категории как прочитанной ===
   useEffect(() => {
     if (activeCategory && unreadCategories.has(activeCategory)) {
       const newUnread = new Set(unreadCategories);
@@ -60,11 +57,11 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     }
   }, [activeCategory, unreadCategories, onUnreadUpdate]);
 
-  // === Скролл ===
+  // === Скролл вниз ===
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => scrollToBottom(), [messages[activeCategory]]);
 
-  // === Приветствие ===
+  // === Приветственное сообщение ===
   useEffect(() => {
     if (!currentUser || messages[activeCategory]) return;
     const cat = categories.find(c => c.id === activeCategory);
@@ -81,13 +78,14 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     const map = {
       general: 'Здравствуйте! Я СорilotX - ваш ИИ-помощник для бизнеса. Задайте любой вопрос, и я постараюсь помочь!',
       finance: `Добро пожаловать в раздел "${name}"! Здесь я могу помочь с вопросами налогов, финансового планирования, отчетности и оптимизации расходов. Что вас интересует?`,
-      marketing: `Добро пожаловать в раздел ${name}! Готов помочь с маркетинговыми стратегиями, продвижением в соцсетях, привлечением клиентов и аналитикой. Что вас волнует?`,
+      marketing: `Добро пожаловать в раздел "${name}"! Готов помочь с маркетинговыми стратегиями, продвижением в соцсетях, привлечением клиентов и аналитикой. Что вас волнует?`,
       legal: `Добро пожаловать в раздел "${name}"! Могу помочь с юридическими вопросами: договоры, права предпринимателей, compliance и регулирование. Чем могу помочь?`,
-      hr: `Добро пожаловать в раздел ${name}! Здесь я могу помочь с вопросами найма, управления персоналом, мотивации сотрудников и HR-процессами. Что вас интересует?`
+      hr: `Добро пожаловать в раздел "${name}"! Здесь я могу помочь с вопросами найма, управления персоналом, мотивации сотрудников и HR-процессами. Что вас интересует?`,
     };
     return map[id] || map.general;
   };
-// === УДАЛЕНИЕ (удаляет сообщение и всё ниже) ===
+
+  // === УДАЛЕНИЕ (со всем диалогом ниже) ===
   const handleDeleteMessage = (id) => {
     setMessages(prev => {
       const msgs = prev[activeCategory] || [];
@@ -122,7 +120,7 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     }
     setMessages(prev => {
       const msgs = prev[activeCategory] || [];
-      const idx = msgs.findIndex(m => m.id === editingId);
+const idx = msgs.findIndex(m => m.id === editingId);
       if (idx === -1) return prev;
       const updated = [...msgs];
       updated[idx] = { ...updated[idx], text: trimmed, edited: true };
@@ -146,7 +144,7 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     }
   };
 
-  // === Действия над сообщением ===
+  // === Меню действий ===
   const MessageActions = ({ message }) => {
     const items = [
       { key: 'copy', label: 'Копировать', icon: <CopyOutlined />, onClick: () => handleCopyMessage(message.text) },
@@ -204,12 +202,13 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     });
 
     setTimeout(() => {
-const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inputValue), sender: 'bot', timestamp: new Date() };
+      const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inputValue), sender: 'bot', timestamp: new Date() };
       setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), bot] }));
       setLoading(false);
     }, 1000 + Math.random() * 1000);
   };
 
+  // === Умные ответы бота ===
   const getCategoryResponse = (id, msg) => {
     const lower = msg.toLowerCase();
     const res = {
@@ -224,7 +223,7 @@ const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inpu
         social: 'SMM — мощный инструмент. Нужна стратегия?',
         promotion: 'Продвижение: от контента до рекламы. Готов помочь.',
         clients: 'Привлечение клиентов — приоритет. Есть ли воронка?',
-      },
+},
       legal: {
         default: 'Юридическая поддержка для бизнеса. Задайте вопрос.',
         contract: 'Договоры должны быть железными. Пришлите шаблон?',
@@ -241,14 +240,14 @@ const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inpu
     };
 
     const cat = res[id] || res.general;
-    if (lower.includes('налог') || lower.includes('налоги')) return cat.tax || cat.default;
-    if (lower.includes('отчет') || lower.includes('отчёт')) return cat.report  ||cat.default;
-    if (lower.includes('план') || lower.includes('бюджет')) return cat.planning || cat.default;
-    if (lower.includes('соцсеть') || lower.includes('реклама')) return cat.social || cat.default;
+    if (lower.includes('налог') ||  lower.includes('налоги')) return cat.tax  || cat.default;
+    if (lower.includes('отчет')  || lower.includes('отчёт')) return cat.report  || cat.default;
+    if (lower.includes('план')  || lower.includes('бюджет')) return cat.planning ||  cat.default;
+    if (lower.includes('соцсеть')  || lower.includes('реклама')) return cat.social  || cat.default;
     if (lower.includes('клиент')) return cat.clients || cat.default;
     if (lower.includes('договор')) return cat.contract || cat.default;
     if (lower.includes('право')) return cat.rights || cat.default;
-    if (lower.includes('найм') || lower.includes('сотрудник')) return cat.hiring || cat.default;
+    if (lower.includes('найм')  || lower.includes('сотрудник')) return cat.hiring  || cat.default;
     if (lower.includes('мотивация')) return cat.motivation || cat.default;
 
     return cat.default;
@@ -284,7 +283,7 @@ const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inpu
                 <Avatar
                   icon={message.sender === 'bot' ? <RobotOutlined /> : <UserOutlined />}
                   style={{ backgroundColor: message.sender === 'bot' ? '#1890ff' : '#52c41a', flexShrink: 0 }}
-/>
+                />
                 <div className="message-content" style={{ flex: 1 }}>
                   {editingId === message.id ? (
                     <div className="editing-wrapper">
@@ -304,7 +303,7 @@ const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inpu
                   ) : (
                     <>
                       <div className="message-header">
-                        <Text strong>{message.sender === 'bot' ? 'SoriPilotX' : 'Вы'}</Text>
+<Text strong>{message.sender === 'bot' ? 'SoriPilotX' : 'Вы'}</Text>
                         <MessageActions message={message} />
                       </div>
                       <Text className="message-text">
@@ -340,18 +339,16 @@ const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inpu
         <div ref={messagesEndRef} />
       </div>
 
-      {/* === Файлы / Голос === */}
+      {/* === Загрузка файлов === */}
       {showFileUpload && <FileUpload onFilesUpload={handleFilesUpload} />}
-      {showVoiceMode && (
-        <div className="voice-wrapper">
-          {/* VoiceMode компонент */}
-          <Button type="text" size="small" onClick={() => setShowVoiceMode(false)}>Закрыть</Button>
-        </div>
-      )}
 
-      {/* === Поле ввода === */}
+      {/* === Поле ввода с AgentSelector === */}
       <div className="input-container">
         <Space.Compact style={{ width: '100%' }}>
+          <AgentSelector />
+          
+
+          {/* Поле ввода */}
           <TextArea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
@@ -361,15 +358,17 @@ const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inpu
                 handleSend();
               }
             }}
-            placeholder={`Сообщение в ${currentCategory?.name || 'чат'}...`}
+            placeholder={`Сообщение в "${currentCategory?.name || 'чат'}"...`}
             autoSize={{ minRows: 1, maxRows: 4 }}
-            style={{ resize: 'none', borderRadius: '8px 0 0 8px' }}
+            style={{ resize: 'none', borderRadius: 0 }}
           />
           <Button
             icon={<PaperClipOutlined />}
             onClick={() => setShowFileUpload(!showFileUpload)}
             style={{ borderRadius: 0 }}
           />
+
+          {/* Кнопка отправки */}
           <Button
             type="primary"
             icon={<SendOutlined />}

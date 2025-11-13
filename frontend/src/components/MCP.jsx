@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Dropdown, Space, Switch, Typography, Divider } from 'antd';
+import { Dropdown, Space, Switch, Typography } from 'antd';
 import {
   GlobalOutlined,
   MailOutlined,
@@ -52,17 +52,6 @@ const AgentSelector = () => {
   const menuItems = [
     {
       key: 'header',
-      label: (
-        <Space align="center" style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space>
-            <RobotOutlined style={{ color: '#1890ff' }} />
-            <Text strong>Агент</Text>
-          </Space>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {selectedAgent === 'agent' ? 'По умолчанию' : 'Выбран'}
-          </Text>
-        </Space>
-      ),
       disabled: true,
     },
     { type: 'divider' },
@@ -120,12 +109,6 @@ const AgentSelector = () => {
         }}
       >
         <GlobalOutlined style={{ color: '#000000', fontSize: 16 }} />
-        <Text strong style={{ fontSize: 14 }}>
-          Агент
-        </Text>
-        <Text type="secondary" style={{ fontSize: 14 }}>
-          ▼
-        </Text>
       </div>
     </Dropdown>
   );
