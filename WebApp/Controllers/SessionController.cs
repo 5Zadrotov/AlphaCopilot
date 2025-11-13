@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WebApp.Data;
-using WebApp.Interfaces;
 using WebApp.Models.DbModels;
 using WebApp.Models.Dto;
 
@@ -11,11 +11,130 @@ namespace WebApp.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class SessionController(IDataService dataService, ApplicationDbContext db, ILogger<SessionController> logger) : ControllerBase
+    public class SessionController(ApplicationDbContext db, ILogger<SessionController> logger) : ControllerBase
     {
-        private readonly IDataService _dataService = dataService;
         private readonly ApplicationDbContext _db = db;
         private readonly ILogger<SessionController> _logger = logger;
+
+        // GET api/Session/{sessionId}  (sessionId — публичный string SessionId)
+        [HttpGet("{sessionId}")]
+        public async Task<IActionResult> GetSession(string sessionId)
+        {
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Unauthorized("Неверный формат идентификатора пользователя");
+
+            var session = await _db.ChatSessions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+
+            if (session == null)
+                return NotFound(new { message = "Сессия не найдена" });
+
+            return Ok(new
+            {
+                session.SessionId,
+                session.Id,
+                session.Title,
+                session.BusinessType,
+                session.SelectedCategory,
+                session.StartedAt,
+                session.LastActivity
+            });
+        }
+
+        public class SessionUpdateRequest
+        {
+            public string? Title { get; set; }
+            public string? SelectedCategory { get; set; }
+            public string? BusinessType { get; set; }
+        }
+
+        // PATCH api/Session/{sessionId}
+        [HttpPatch("{sessionId}")]
+        public async Task<IActionResult> UpdateSession(string sessionId, [FromBody] SessionUpdateRequest request)
+        {
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Unauthorized("Неверный формат идентификатора пользователя");
+
+            var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+            if (session == null)
+                return NotFound(new { message = "Сессия не найдена" });
+
+            var changed = false;
+            if (!string.IsNullOrWhiteSpace(request.Title) && request.Title != session.Title)
+            {
+                session.Title = request.Title;
+                changed = true;
+            }
+            if (!string.IsNullOrWhiteSpace(request.SelectedCategory) && request.SelectedCategory != session.SelectedCategory)
+            {
+                session.SelectedCategory = request.SelectedCategory;
+                changed = true;
+            }
+            if (!string.IsNullOrWhiteSpace(request.BusinessType) && request.BusinessType != session.BusinessType)
+            {
+                session.BusinessType = request.BusinessType;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                session.LastActivity = DateTime.UtcNow;
+                try
+                {
+                    _db.ChatSessions.Update(session);
+                    await _db.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to update session {SessionId} for user {UserId}.", sessionId, userId);
+                    return StatusCode(500, new { message = "Не удалось обновить сессию" });
+                }
+            }
+
+            return Ok(new
+            {
+                session.SessionId,
+                session.Id,
+                session.Title,
+                session.BusinessType,
+                session.SelectedCategory,
+                session.StartedAt,
+                session.LastActivity
+            });
+        }
+
+        // DELETE api/Session/{sessionId}
+        [HttpDelete("{sessionId}")]
+        public async Task<IActionResult> DeleteSession(string sessionId)
+        {
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Unauthorized("Неверный формат идентификатора пользователя");
+
+            var session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
+            if (session == null)
+                return NotFound(new { message = "Сессия не найдена" });
+
+            try
+            {
+                // Удаляем сообщения, связанные с сессией, затем саму сессию
+                var messages = _db.ChatMessages.Where(m => m.SessionId == session.Id);
+                _db.ChatMessages.RemoveRange(messages);
+                _db.ChatSessions.Remove(session);
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation("Deleted session {SessionId} and messages for user {UserId}.", sessionId, userId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete session {SessionId} for user {UserId}.", sessionId, userId);
+                return StatusCode(500, new { message = "Не удалось удалить сессию" });
+            }
+        }
 
         [HttpPost("new")]
         public async Task<IActionResult> NewSession([FromBody] NewChatSessionRequest request)
