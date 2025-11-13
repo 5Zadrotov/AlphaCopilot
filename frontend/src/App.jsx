@@ -17,13 +17,13 @@ const getUserCustomChatsKey = (userId) => `sorilotx-custom-chats-${userId}`;
 
 const MainApp = () => {
   const [activeCategory, setActiveCategory] = useState('general');
-  const [unreadCount, setUnreadCount] = useState(0); 
+  const [unreadCategories, setUnreadCategories] = useState(new Set()); // ВОССТАНАВЛИВАЕМ правильную логику
   const [customChats, setCustomChats] = useState([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { currentUser, logout } = useAuth();
-  const navigate = useNavigate(); // Добавляем навигацию
+  const navigate = useNavigate();
  
   const defaultCategories = [
     { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
@@ -39,16 +39,23 @@ const MainApp = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // ВОССТАНАВЛИВАЕМ загрузку кастомных чатов
   useEffect(() => {
     if (!currentUser) return;
-    const key = getUserCustomChatsKey(currentUser.id);
-    const saved = localStorage.getItem(key);
-    if (saved) setCustomChats(JSON.parse(saved));
+    const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
+    const savedCustomChats = localStorage.getItem(userCustomChatsKey);
+    if (savedCustomChats) {
+      setCustomChats(JSON.parse(savedCustomChats));
+    } else {
+      setCustomChats([]);
+    }
   }, [currentUser]);
 
+  // ВОССТАНАВЛИВАЕМ сохранение кастомных чатов
   useEffect(() => {
-    if (customChats.length > 0 && currentUser) {
-      localStorage.setItem(getUserCustomChatsKey(currentUser.id), JSON.stringify(customChats));
+    if (currentUser) {
+      const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
+      localStorage.setItem(userCustomChatsKey, JSON.stringify(customChats));
     }
   }, [customChats, currentUser]);
 
@@ -57,6 +64,12 @@ const MainApp = () => {
   const handleCategoryClick = (id) => {
     setActiveCategory(id);
     if (isMobile) setMobileMenuVisible(false);
+    // Убираем категорию из непрочитанных при клике
+    if (unreadCategories.has(id)) {
+      const newUnread = new Set(unreadCategories);
+      newUnread.delete(id);
+      setUnreadCategories(newUnread);
+    }
   };
 
   const handleCreateChat = (newChat) => {
@@ -65,10 +78,15 @@ const MainApp = () => {
     if (isMobile) setMobileMenuVisible(false);
   };
 
+  // ВОССТАНАВЛИВАЕМ правильную логику уведомлений
+  const handleUnreadUpdate = (unreadSet) => {
+    setUnreadCategories(unreadSet);
+  };
+
   // Обработчик выхода с редиректом
   const handleLogout = () => {
     logout();
-    navigate('/register'); // Редирект на страницу авторизации
+    navigate('/register');
   };
 
   const DesktopSidebar = () => (
@@ -93,8 +111,13 @@ const MainApp = () => {
         </div>
         <div className="categories-list">
           {allCategories.map((cat) => (
-            <Badge key={cat.id} count={unreadCount > 0 ? 1 : 0} offset={[-5, 5]} color="red">
-<Card
+            <Badge 
+              key={cat.id} 
+              dot={unreadCategories.has(cat.id)} // ВОССТАНАВЛИВАЕМ правильные уведомления
+              offset={[-5, 5]} 
+              color="red"
+            >
+              <Card
                 className={`category-card ${activeCategory === cat.id ? 'active' : ''}`}
                 hoverable
                 onClick={() => handleCategoryClick(cat.id)}
@@ -104,7 +127,7 @@ const MainApp = () => {
                   <div className="category-text">
                     <Text strong className="category-name">
                       {cat.name}
-                      {cat.isCustom && <Text type="secondary" style={{ fontSize: 10, marginLeft: 4 }}>Custom</Text>}
+                      {cat.isCustom && <Text type="secondary" style={{ fontSize: 10, marginLeft: 4 }}>●</Text>}
                     </Text>
                     <Text type="secondary" className="category-description">{cat.description}</Text>
                   </div>
@@ -173,7 +196,7 @@ const MainApp = () => {
             <ChatInterface
               activeCategory={activeCategory}
               categories={allCategories}
-              onUnreadUpdate={setUnreadCount}
+              onUnreadUpdate={handleUnreadUpdate} // ВОССТАНАВЛИВАЕМ правильную передачу
               currentUser={currentUser}
             />
           </div>
@@ -216,7 +239,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Стартовая страница - авторизация */}
         <Route path="/" element={<Navigate to="/register" />} />
         <Route path="/chat" element={<MainApp />} />
         <Route path="/register" element={<Authorization />} />
