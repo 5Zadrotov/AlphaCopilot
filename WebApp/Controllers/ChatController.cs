@@ -128,7 +128,7 @@ namespace WebApp.Controllers
                 if (allSessions.Key == Guid.Empty)
                 {
                     var newSessionId = Guid.NewGuid();
-                    _sessions[newSessionId] = new List<ChatMessage>();
+                    _sessions[newSessionId] = [];
                     _logger.LogInformation("No sessions found for user {UserId}, created new session {SessionId}.", userId, newSessionId);
                     return Ok(new { sessionId = newSessionId.ToString(), messages = new List<ChatMessage>() });
                 }

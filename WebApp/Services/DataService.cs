@@ -51,7 +51,7 @@ namespace WebApp.Services
             var session = new ChatSession
             {
                 Id = Guid.NewGuid(),
-                SessionId = Guid.NewGuid().ToString(), // <- уникальный SessionId строкой
+                SessionId = Guid.NewGuid().ToString(),
                 UserId = userId,
                 Title = $"Сессия для {businessType}",
                 BusinessType = businessType,

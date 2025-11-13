@@ -4,6 +4,6 @@
     {
         public string Content { get; set; } = string.Empty;
         public string Category { get; set; } = "Общее";
-        public string? SessionId { get; set; } // Теперь опционально
+        public string? SessionId { get; set; }
     }
 }
