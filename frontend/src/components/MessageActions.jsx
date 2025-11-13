@@ -9,7 +9,6 @@ const MessageActions = ({
   onDelete,
   onEdit, 
   isAI = false,
-  renderTrigger
 }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
