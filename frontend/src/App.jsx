@@ -23,6 +23,7 @@ const MainApp = () => {
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { currentUser, logout } = useAuth();
+  const navigate = useNavigate(); // Добавляем навигацию
  
   const defaultCategories = [
     { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
@@ -62,6 +63,12 @@ const MainApp = () => {
     setCustomChats(prev => [...prev, newChat]);
     setActiveCategory(newChat.id);
     if (isMobile) setMobileMenuVisible(false);
+  };
+
+  // Обработчик выхода с редиректом
+  const handleLogout = () => {
+    logout();
+    navigate('/register'); // Редирект на страницу авторизации
   };
 
   const DesktopSidebar = () => (
@@ -137,7 +144,7 @@ const MainApp = () => {
               {currentUser ? (
                 <>
                   <Text className="user-welcome mobile-hidden">Привет, {currentUser.username}!</Text>
-                  <Button type="text" icon={<LogoutOutlined />} onClick={logout} className="logout-button">
+                  <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout} className="logout-button">
                     <span className="mobile-hidden">Выйти</span>
                   </Button>
                 </>
@@ -209,9 +216,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainApp />} />
+        {/* Стартовая страница - авторизация */}
+        <Route path="/" element={<Navigate to="/register" />} />
+        <Route path="/chat" element={<MainApp />} />
         <Route path="/register" element={<Authorization />} />
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/register" />} />
       </Routes>
     </BrowserRouter>
   );

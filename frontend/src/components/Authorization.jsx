@@ -10,14 +10,14 @@ const { TabPane } = Tabs;
 const Authorization = () => {
   const [activeTab, setActiveTab] = useState('register');
   const [form] = Form.useForm();
-  const { register, login } = useAuth(); // ← register добавлен!
+  const { register, login } = useAuth();
   const navigate = useNavigate();
 
   // Регистрация
   const handleRegister = (values) => {
     const success = register(values.login, values.password);
     if (success) {
-        message.success('Регистрация успешна!');;
+        message.success('Регистрация успешна!');
     }
   };
 
@@ -25,7 +25,7 @@ const Authorization = () => {
   const handleLogin = (values) => {
     const success = login(values.login, values.password);
     if (success) {
-      navigate('/');
+      navigate('/chat'); // Редирект на чат вместо главной
     }
   };
 
@@ -40,10 +40,10 @@ const Authorization = () => {
             {/* Логотип */}
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="64" height="64" rx="16" fill="#0078D4"/>
-              <path d="M20 32L28 40L44 24" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M32 20V44" stroke="white" stroke-width="4" stroke-linecap="round"/>
-            </svg>
+                <rect width="64" height="64" rx="16" fill="#0078D4"/>
+                <path d="M20 32L28 40L44 24" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M32 20V44" stroke="white" strokeWidth="4" strokeLinecap="round"/>
+              </svg>
               <Title level={2} style={{ margin: 0 }}>CopilotX</Title>
             </div>
 
@@ -72,8 +72,7 @@ const Authorization = () => {
                   <Input.Password prefix={<LockOutlined />} placeholder="Пароль" />
                 </Form.Item>
 
-                
-<Button type="primary" htmlType="submit" block style={{ borderRadius: 8 }}>
+                <Button type="primary" htmlType="submit" block style={{ borderRadius: 8 }}>
                   Зарегистрироваться
                 </Button>
               </Form>
