@@ -1,14 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Input, Button, Avatar, List, Typography, Space, Tag, Divider, Dropdown, message } from 'antd';
-import { AudioOutlined, SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined, MoreOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
+import {
+  Input, Button, Avatar, List, Typography, Space, Tag, Divider, Dropdown, message,
+} from 'antd';
+import {
+  SendOutlined, UserOutlined, RobotOutlined, PaperClipOutlined,
+  MoreOutlined, CopyOutlined, DeleteOutlined, EditOutlined,
+} from '@ant-design/icons';
 import FileUpload from './FileUpload';
-import VoiceMode from './VoiceMode';
 import './ChatInterface.css';
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
-// Хелперы для работы с user-specific данными
 const getUserChatsKey = (userId) => `sorilotx-chat-history-${userId}`;
 
 const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser }) => {
@@ -17,389 +20,310 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
   const [loading, setLoading] = useState(false);
   const [unreadCategories, setUnreadCategories] = useState(new Set());
   const [showFileUpload, setShowFileUpload] = useState(false);
-  const[showVoiceMode, setShowVoiceMode] = useState(false);
+  const [showVoiceMode, setShowVoiceMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editValue, setEditValue] = useState('');
   const messagesEndRef = useRef(null);
 
-  // Загрузка истории из localStorage
+  // === Загрузка / Сохранение ===
   useEffect(() => {
-    if (!currentUser) return; // Просто не загружаем данные если нет пользователя
-
-    const userChatsKey = getUserChatsKey(currentUser.id);
-    const savedMessages = localStorage.getItem(userChatsKey);
-    const savedUnread = localStorage.getItem('sorilotx-unread-categories');
-    
-    if (savedMessages) {
-      const parsedMessages = JSON.parse(savedMessages);
-      Object.keys(parsedMessages).forEach(key => {
-        parsedMessages[key] = parsedMessages[key].map(msg => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }));
+    if (!currentUser) return;
+    const key = getUserChatsKey(currentUser.id);
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      Object.keys(parsed).forEach(k => {
+        parsed[k] = parsed[k].map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
       });
-      setMessages(parsedMessages);
-    } else {
-      // Если нет сохраненных данных, инициализируем пустой объект
-      setMessages({});
+      setMessages(parsed);
     }
 
-    if (savedUnread) {
-      setUnreadCategories(new Set(JSON.parse(savedUnread)));
-    }
+    // Загрузка непрочитанных
+    const unread = localStorage.getItem('sorilotx-unread-categories');
+    if (unread) setUnreadCategories(new Set(JSON.parse(unread)));
   }, [currentUser]);
 
-  // Сохранение истории в localStorage
   useEffect(() => {
     if (Object.keys(messages).length > 0 && currentUser) {
-      const userChatsKey = getUserChatsKey(currentUser.id);
-      localStorage.setItem(userChatsKey, JSON.stringify(messages));
+      localStorage.setItem(getUserChatsKey(currentUser.id), JSON.stringify(messages));
     }
   }, [messages, currentUser]);
 
-  // Помечаем категорию как прочитанную при активации
+  // === Прочитано ===
   useEffect(() => {
     if (activeCategory && unreadCategories.has(activeCategory)) {
       const newUnread = new Set(unreadCategories);
       newUnread.delete(activeCategory);
       setUnreadCategories(newUnread);
       localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
+      onUnreadUpdate?.(newUnread.size);
     }
-  }, [activeCategory, unreadCategories]);
+  }, [activeCategory, unreadCategories, onUnreadUpdate]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // === Скролл ===
+  const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => scrollToBottom(), [messages[activeCategory]]);
 
+  // === Приветствие ===
   useEffect(() => {
-    scrollToBottom();
-  }, [messages[activeCategory]]);
-
-  // Инициализация категории если её нет
-  useEffect(() => {
-    if (!currentUser) return;
-    
-    if (!messages[activeCategory]) {
-      const category = categories.find(cat => cat.id === activeCategory);
-      const welcomeMessage = {
-        id: Date.now(),
-        text: getWelcomeMessage(activeCategory, category?.name),
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages(prev => ({
-        ...prev,
-        [activeCategory]: [welcomeMessage]
-      }));
-    }
+    if (!currentUser || messages[activeCategory]) return;
+    const cat = categories.find(c => c.id === activeCategory);
+    const welcome = {
+      id: Date.now(),
+      text: getWelcomeMessage(activeCategory, cat?.name),
+      sender: 'bot',
+      timestamp: new Date(),
+    };
+    setMessages(prev => ({ ...prev, [activeCategory]: [welcome] }));
   }, [activeCategory, categories, messages, currentUser]);
 
-  const getWelcomeMessage = (categoryId, categoryName) => {
-    const welcomeMessages = {
+  const getWelcomeMessage = (id, name) => {
+    const map = {
       general: 'Здравствуйте! Я СорilotX - ваш ИИ-помощник для бизнеса. Задайте любой вопрос, и я постараюсь помочь!',
-      finance: `Добро пожаловать в раздел "${categoryName}"! Здесь я могу помочь с вопросами налогов, финансового планирования, отчетности и оптимизации расходов. Что вас интересует?`,
-      marketing: `Добро пожаловать в раздел "${categoryName}"! Готов помочь с маркетинговыми стратегиями, продвижением в соцсетях, привлечением клиентов и аналитикой. Что вас волнует?`,
-      legal: `Добро пожаловать в раздел "${categoryName}"! Могу помочь с юридическими вопросами: договоры, права предпринимателей, compliance и регулирование. Чем могу помочь?`,
-      hr: `Добро пожаловать в раздел "${categoryName}"! Здесь я могу помочь с вопросами найма, управления персоналом, мотивации сотрудников и HR-процессами. Что вас интересует?`
+      finance: `Добро пожаловать в раздел "${name}"! Здесь я могу помочь с вопросами налогов, финансового планирования, отчетности и оптимизации расходов. Что вас интересует?`,
+      marketing: `Добро пожаловать в раздел ${name}! Готов помочь с маркетинговыми стратегиями, продвижением в соцсетях, привлечением клиентов и аналитикой. Что вас волнует?`,
+      legal: `Добро пожаловать в раздел "${name}"! Могу помочь с юридическими вопросами: договоры, права предпринимателей, compliance и регулирование. Чем могу помочь?`,
+      hr: `Добро пожаловать в раздел ${name}! Здесь я могу помочь с вопросами найма, управления персоналом, мотивации сотрудников и HR-процессами. Что вас интересует?`
     };
-    return welcomeMessages[categoryId] || welcomeMessages.general;
+    return map[id] || map.general;
   };
-
-  // Функция для удаления сообщения и всего что ниже
-  const handleDeleteMessage = (messageId) => {
+// === УДАЛЕНИЕ (удаляет сообщение и всё ниже) ===
+  const handleDeleteMessage = (id) => {
     setMessages(prev => {
-      const categoryMessages = prev[activeCategory] || [];
-      const index = categoryMessages.findIndex(msg => msg.id === messageId);
-      
-      if (index !== -1) {
-        const newMessages = {
-          ...prev,
-          [activeCategory]: categoryMessages.slice(0, index)
-        };
-        return newMessages;
-      }
-      return prev;
+      const msgs = prev[activeCategory] || [];
+      const idx = msgs.findIndex(m => m.id === id);
+      if (idx === -1) return prev;
+      return { ...prev, [activeCategory]: msgs.slice(0, idx) };
     });
-    message.success('Сообщение и последующий диалог удалены');
+    message.success('Сообщение и диалог ниже удалены');
   };
 
-  // Функция для копирования текста
+  // === КОПИРОВАНИЕ ===
   const handleCopyMessage = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
       message.success('Текст скопирован');
-    } catch (err) {
-      message.error('Не удалось скопировать текст');
+    } catch {
+      message.error('Не удалось скопировать');
     }
   };
 
-  // Компонент действий для сообщения
+  // === РЕДАКТИРОВАНИЕ ===
+  const startEdit = (id, text) => {
+    setEditingId(id);
+    setEditValue(text);
+  };
+
+  const saveEdit = () => {
+    const trimmed = editValue.trim();
+    if (!trimmed) {
+      message.warning('Сообщение не может быть пустым');
+      return;
+    }
+    setMessages(prev => {
+      const msgs = prev[activeCategory] || [];
+      const idx = msgs.findIndex(m => m.id === editingId);
+      if (idx === -1) return prev;
+      const updated = [...msgs];
+      updated[idx] = { ...updated[idx], text: trimmed, edited: true };
+      return { ...prev, [activeCategory]: updated };
+    });
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const handleEditKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      saveEdit();
+    } else if (e.key === 'Escape') {
+      cancelEdit();
+    }
+  };
+
+  // === Действия над сообщением ===
   const MessageActions = ({ message }) => {
-    const menuItems = [
-      {
-        key: 'copy',
-        label: 'Копировать текст',
-        icon: <CopyOutlined />,
-        onClick: () => handleCopyMessage(message.text)
-      }
+    const items = [
+      { key: 'copy', label: 'Копировать', icon: <CopyOutlined />, onClick: () => handleCopyMessage(message.text) },
     ];
 
-    // Только для пользовательских сообщений добавляем удаление
     if (message.sender === 'user') {
-      menuItems.push({
-        key: 'delete',
-        label: 'Удалить и очистить диалог ниже',
-        icon: <DeleteOutlined />,
-        danger: true,
-        onClick: () => handleDeleteMessage(message.id)
-      });
+      items.push(
+        { key: 'edit', label: 'Редактировать', icon: <EditOutlined />, onClick: () => startEdit(message.id, message.text) },
+        { key: 'delete', label: 'Удалить', icon: <DeleteOutlined />, danger: true, onClick: () => handleDeleteMessage(message.id) }
+      );
     }
 
     return (
-      <Dropdown
-        menu={{ items: menuItems }}
-        trigger={['click']}
-        placement="bottomRight"
-      >
-        <Button 
-          type="text" 
-          icon={<MoreOutlined />} 
-          size="small"
-          className="message-actions-btn"
-        />
+      <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+        <Button type="text" icon={<MoreOutlined />} size="small" className="message-actions-btn" />
       </Dropdown>
     );
   };
 
+  // === Загрузка файлов ===
   const handleFilesUpload = (files) => {
-    const fileMessage = {
+    const msg = {
       id: Date.now(),
       text: `Загружено файлов: ${files.length}. ${files.map(f => f.name).join(', ')}`,
       sender: 'user',
       timestamp: new Date(),
-      files: files
+      files,
     };
-
-    setMessages(prev => ({
-      ...prev,
-      [activeCategory]: [...(prev[activeCategory] || []), fileMessage]
-    }));
-
+    setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), msg] }));
     setShowFileUpload(false);
 
-    // Имитация анализа файлов
     setTimeout(() => {
-      const analysisMessage = {
-        id: Date.now() + 1,
-        text: `Файлы получены и анализируются. Я готов ответить на вопросы по их содержимому.`,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => ({
-        ...prev,
-        [activeCategory]: [...(prev[activeCategory] || []), analysisMessage]
-      }));
+      const bot = { id: Date.now() + 1, text: 'Файлы получены и анализируются.', sender: 'bot', timestamp: new Date() };
+      setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), bot] }));
     }, 2000);
   };
-  //Отправка ГС
-  const handleAudioUpload = (audioFile) => {
-    const audioURL = URL.createObjectURL(audioFile);
-    const audioMessage = {
-      id: Date.now(),
-      text: 'Голосовое сообщение',
-      sender: 'user',
-      timestamp: new Date(),
-      audio: audioFile,
-      audioURL: audioURL
-    };
-    setMessages(prev => ({
-      ...prev,
-      [activeCategory]: [...(prev[activeCategory] || []), audioMessage]
-    }));
 
-    setShowVoiceMode(false);
-
-    setTimeout(() => {
-      const botResponse = {
-        id: Date.now() + 1,
-        text: 'Я получил ваше голосовое сообщение. Голос распознан, и я готов ответить на ваш вопрос.',
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      setMessages(prev => ({
-        ...prev,
-        [activeCategory]: [...(prev[activeCategory] || []), botResponse]
-      }));
-    }, 2500);
-  };
-
-  const handleSend = async () => {
+  // === Отправка сообщения ===
+  const handleSend = () => {
     if (!inputValue.trim()) return;
-
-    const userMessage = {
-      id: Date.now(),
-      text: inputValue,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => ({
-      ...prev,
-      [activeCategory]: [...(prev[activeCategory] || []), userMessage]
-    }));
+    const msg = { id: Date.now(), text: inputValue.trim(), sender: 'user', timestamp: new Date() };
+    setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), msg] }));
     setInputValue('');
     setLoading(true);
 
-    // Добавляем в непрочитанные для других категорий
+    // Помечаем другие категории как непрочитанные
     categories.forEach(cat => {
       if (cat.id !== activeCategory && !unreadCategories.has(cat.id)) {
         const newUnread = new Set(unreadCategories);
         newUnread.add(cat.id);
         setUnreadCategories(newUnread);
         localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
+        onUnreadUpdate?.(newUnread.size);
       }
     });
 
-    // Имитация ответа ИИ
     setTimeout(() => {
-      const responseText = getCategoryResponse(activeCategory, inputValue);
-      
-      const botMessage = {
-        id: Date.now() + 1,
-        text: responseText,
-        sender: 'bot',
-        timestamp: new Date(),
-      };
-      
-      setMessages(prev => ({
-        ...prev,
-        [activeCategory]: [...(prev[activeCategory] || []), botMessage]
-      }));
+const bot = { id: Date.now() + 1, text: getCategoryResponse(activeCategory, inputValue), sender: 'bot', timestamp: new Date() };
+      setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), bot] }));
       setLoading(false);
     }, 1000 + Math.random() * 1000);
   };
 
-  const getCategoryResponse = (categoryId, userMessage) => {
-    const lowerMessage = userMessage.toLowerCase();
-    
-    const responses = {
+  const getCategoryResponse = (id, msg) => {
+    const lower = msg.toLowerCase();
+    const res = {
       finance: {
-        default: 'Для финансовых вопросов рекомендую: вести регулярный учет доходов/расходов, использовать УСН для оптимизации налогов, создавать финансовую подушку безопасности.',
-        tax: 'Для ИП на УСН основные налоги: 6% с доходов или 15% с доходов за вычетом расходов. Также нужно платить страховые взносы.',
-        report: 'Основные отчеты для ИП: декларация по УСН (до 30 апреля), отчетность за сотрудников в ПФР, ФСС и ФНС.',
-        planning: 'Для финансового планирования: определите ежемесячные расходы, создайте резервный фонд (3-6 месяцев расходов), планируйте налоги заранее.'
+        default: 'Я помогу с финансовыми вопросами. Уточните, пожалуйста.',
+        tax: 'Налоговые вопросы — моя специализация. Опишите ситуацию.',
+        report: 'Готов помочь с составлением отчётности.',
+        planning: 'Финансовое планирование — ключ к успеху. Расскажите о целях.',
       },
       marketing: {
-        default: 'Для маркетинга малого бизнеса: используйте соцсети для вовлечения аудитории, запустите реферальную программу, работайте с отзывами клиентов.',
-        social: 'Для продвижения в соцсетях: публикуйте полезный контент, используйте сторис и reels, взаимодействуйте с аудиторией в комментариях.',
-        promotion: 'Эффективные методы продвижения: локальный SEO, контекстная реклама, сотрудничество с блогерами, email-рассылки.',
-        clients: 'Для привлечения клиентов: предложите бесплатную консультацию, запустите акцию для новых клиентов, используйте отзывы в рекламе.'
+        default: 'Маркетинг — это искусство. Что именно вас интересует?',
+        social: 'SMM — мощный инструмент. Нужна стратегия?',
+        promotion: 'Продвижение: от контента до рекламы. Готов помочь.',
+        clients: 'Привлечение клиентов — приоритет. Есть ли воронка?',
       },
       legal: {
-        default: 'По юридическим вопросам: всегда заключайте письменные договоры, ведите документацию properly, консультируйтесь со специалистом при сложных вопросах.',
-        contract: 'В договоре обязательно укажите: предмет, сроки, стоимость, ответственность сторон, порядок разрешения споров.',
-        rights: 'Основные права ИП: свободная предпринимательская деятельность, выбор системы налогообложения, защита прав в суде.',
-        compliance: 'Для соблюдения требований: ведите кассовую дисциплину, храните документы 4-5 лет, своевременно сдавайте отчетность.'
+        default: 'Юридическая поддержка для бизнеса. Задайте вопрос.',
+        contract: 'Договоры должны быть железными. Пришлите шаблон?',
+        rights: 'Права предпринимателя — основа. В чём проблема?',
+        compliance: 'Compliance — это не формальность. Нужен аудит?',
       },
       hr: {
-        default: 'Для HR вопросов: разработайте четкие должностные инструкции, внедрите систему onboarding, регулярно проводите оценку сотрудников.',
-        hiring: 'При найме сотрудников: составьте понятное описание вакансии, проводите структурированные собеседования, проверяйте рекомендации.',
-        management: 'Для управления персоналом: установите четкие KPI, проводите регулярные встречи 1-на-1, создавайте карьерные треки.',
-        motivation: 'Методы мотивации: конкурентная зарплата, бонусы за результаты, обучение за счет компании, гибкий график.'
+        default: 'HR — сердце компании. Чем помочь?',
+        hiring: 'Найм — это инвестиция. Ищем таланты?',
+        management: 'Управление персоналом — это система. Нужны KPI?',
+        motivation: 'Мотивация = производительность. Есть ли программа?',
       },
-      general: {
-        default: 'Благодарю за вопрос! Как ИИ-помощник для бизнеса, я могу помочь с финансами, маркетингом, юридическими вопросами и управлением персоналом. Выберите конкретную тему или задайте свой вопрос.'
-      }
+      general: { default: 'Спасибо за вопрос! Чем могу помочь?' },
     };
 
-    const categoryResponses = responses[categoryId] || responses.general;
-    
-    if (lowerMessage.includes('налог') || lowerMessage.includes('налоги')) return categoryResponses.tax || categoryResponses.default;
-    if (lowerMessage.includes('отчет') || lowerMessage.includes('отчетность')) return categoryResponses.report || categoryResponses.default;
-    if (lowerMessage.includes('план') || lowerMessage.includes('бюджет')) return categoryResponses.planning || categoryResponses.default;
-    if (lowerMessage.includes('соцсет') || lowerMessage.includes('instagram')) return categoryResponses.social || categoryResponses.default;
-    if (lowerMessage.includes('продвижен') || lowerMessage.includes('реклам')) return categoryResponses.promotion || categoryResponses.default;
-    if (lowerMessage.includes('клиент') || lowerMessage.includes('покупател')) return categoryResponses.clients || categoryResponses.default;
-    if (lowerMessage.includes('договор') || lowerMessage.includes('контракт')) return categoryResponses.contract || categoryResponses.default;
-    if (lowerMessage.includes('права') || lowerMessage.includes('обязанност')) return categoryResponses.rights || categoryResponses.default;
-    if (lowerMessage.includes('требован') || lowerMessage.includes('закон')) return categoryResponses.compliance || categoryResponses.default;
-    if (lowerMessage.includes('найм') || lowerMessage.includes('сотрудник')) return categoryResponses.hiring || categoryResponses.default;
-    if (lowerMessage.includes('управлен') || lowerMessage.includes('руководств')) return categoryResponses.management || categoryResponses.default;
-    if (lowerMessage.includes('мотивац') || lowerMessage.includes('стимул')) return categoryResponses.motivation || categoryResponses.default;
-    
-    return categoryResponses.default;
-  };
+    const cat = res[id] || res.general;
+    if (lower.includes('налог') || lower.includes('налоги')) return cat.tax || cat.default;
+    if (lower.includes('отчет') || lower.includes('отчёт')) return cat.report  ||cat.default;
+    if (lower.includes('план') || lower.includes('бюджет')) return cat.planning || cat.default;
+    if (lower.includes('соцсеть') || lower.includes('реклама')) return cat.social || cat.default;
+    if (lower.includes('клиент')) return cat.clients || cat.default;
+    if (lower.includes('договор')) return cat.contract || cat.default;
+    if (lower.includes('право')) return cat.rights || cat.default;
+    if (lower.includes('найм') || lower.includes('сотрудник')) return cat.hiring || cat.default;
+    if (lower.includes('мотивация')) return cat.motivation || cat.default;
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    return cat.default;
   };
 
   const currentMessages = messages[activeCategory] || [];
-  const currentCategory = categories.find(cat => cat.id === activeCategory);
+  const currentCategory = categories.find(c => c.id === activeCategory);
 
   return (
     <div className="chat-interface">
-      {/* Заголовок чата */}
+      {/* === Заголовок === */}
       <div className="chat-header">
         <Space>
-          <Avatar 
-            size="large" 
-            icon={<RobotOutlined />} 
-            style={{ backgroundColor: '#1890ff' }}
-          />
+          <Avatar size="large" icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
           <div>
-            <Text strong style={{ fontSize: '18px' }}>
-              {currentCategory?.name || 'Общий чат'}
-            </Text>
+            <Text strong style={{ fontSize: 18 }}>{currentCategory?.name || 'Общий чат'}</Text>
             <br />
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              {currentCategory?.description || 'Задавайте любые вопросы'}
-            </Text>
+            <Text type="secondary" style={{ fontSize: 12 }}>{currentCategory?.description || 'Задавайте вопросы'}</Text>
           </div>
         </Space>
-        <Tag color="blue" className="message-count">
-          {currentMessages.length} сообщений
-        </Tag>
+        <Tag color="blue">{currentMessages.length} сообщений</Tag>
       </div>
 
       <Divider style={{ margin: '16px 0' }} />
 
-      {/* Область сообщений */}
+      {/* === Сообщения === */}
       <div className="messages-container">
         <List
           dataSource={currentMessages}
           renderItem={(message) => (
             <List.Item className={`message-item ${message.sender}-message`}>
               <Space align="start" size="middle" style={{ width: '100%' }}>
-                <Avatar 
-                  size="default"
+                <Avatar
                   icon={message.sender === 'bot' ? <RobotOutlined /> : <UserOutlined />}
-                  style={{ 
-                    backgroundColor: message.sender === 'bot' ? '#1890ff' : '#52c41a',
-                    flexShrink: 0
-                  }}
-                />
+                  style={{ backgroundColor: message.sender === 'bot' ? '#1890ff' : '#52c41a', flexShrink: 0 }}
+/>
                 <div className="message-content" style={{ flex: 1 }}>
-                  <div className="message-header">
-                    <Text strong className="message-sender">
-                      {message.sender === 'bot' ? 'SoriPilotX' : 'Вы'}
-                    </Text>
-                    <MessageActions message={message} />
-                  </div>
-                  <Text className="message-text">{message.text}</Text>
-                  {message.files && (
-                    <div className="file-attachments">
-                      <PaperClipOutlined style={{ marginRight: 4 }} />
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        Прикреплено {message.files.length} файлов
-                      </Text>
+                  {editingId === message.id ? (
+                    <div className="editing-wrapper">
+                      <Space.Compact style={{ width: '100%' }}>
+                        <TextArea
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={handleEditKeyDown}
+                          autoSize={{ minRows: 1, maxRows: 6 }}
+                          autoFocus
+                          style={{ resize: 'none' }}
+                        />
+                        <Button type="primary" size="small" onClick={saveEdit}>Сохранить</Button>
+                        <Button size="small" onClick={cancelEdit}>Отмена</Button>
+                      </Space.Compact>
                     </div>
+                  ) : (
+                    <>
+                      <div className="message-header">
+                        <Text strong>{message.sender === 'bot' ? 'SoriPilotX' : 'Вы'}</Text>
+                        <MessageActions message={message} />
+                      </div>
+                      <Text className="message-text">
+                        {message.text}
+                        {message.edited && <Text type="secondary" style={{ fontSize: 10, marginLeft: 4 }}>(ред.)</Text>}
+                      </Text>
+                      {message.files && (
+                        <div className="file-attachments">
+                          <PaperClipOutlined style={{ marginRight: 4 }} />
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            Прикреплено {message.files.length} файл(ов)
+                          </Text>
+                        </div>
+                      )}
+                      <div className="message-time">
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </>
                   )}
-                  <div className="message-time">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
                 </div>
               </Space>
             </List.Item>
@@ -408,71 +332,51 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
         {loading && (
           <div className="message-item bot-message">
             <Space align="start" size="middle" style={{ width: '100%' }}>
-              <Avatar size="default" icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
-              <div className="message-content">
-                <Text type="secondary" className="typing-indicator">
-                  СорilotX печатает...
-                </Text>
-              </div>
+              <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
+              <Text type="secondary">СорilotX печатает...</Text>
             </Space>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Загрузка файлов */}
-      {showFileUpload && (
-        <div className="file-upload-section">
-          <FileUpload onFilesUpload={handleFilesUpload} />
+      {/* === Файлы / Голос === */}
+      {showFileUpload && <FileUpload onFilesUpload={handleFilesUpload} />}
+      {showVoiceMode && (
+        <div className="voice-wrapper">
+          {/* VoiceMode компонент */}
+          <Button type="text" size="small" onClick={() => setShowVoiceMode(false)}>Закрыть</Button>
         </div>
       )}
-      {showVoiceMode && (
-          <div className="voice-wrapper">
-            <VoiceMode onAudioUpload={handleAudioUpload} />
-            <Button type="text" size="small" onClick={() => setShowVoiceMode(false)} style={{ marginTop: 8 }}>
-              Закрыть
-            </Button>
-          </div>
-        )}
-      {/* Поле ввода */}
+
+      {/* === Поле ввода === */}
       <div className="input-container">
         <Space.Compact style={{ width: '100%' }}>
           <TextArea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={`Задайте вопрос о ${currentCategory?.name.toLowerCase() || 'бизнесе'}...`}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder={`Сообщение в ${currentCategory?.name || 'чат'}...`}
             autoSize={{ minRows: 1, maxRows: 4 }}
             style={{ resize: 'none', borderRadius: '8px 0 0 8px' }}
           />
-          <Button 
-            type="default" 
+          <Button
             icon={<PaperClipOutlined />}
             onClick={() => setShowFileUpload(!showFileUpload)}
-            style={{ height: 'auto', borderRadius: 0 }}
+            style={{ borderRadius: 0 }}
           />
-             <Button 
-              type='default'
-              icon={<AudioOutlined />}
-              onClick={() => {
-                setShowVoiceMode(!showVoiceMode);
-              }}
-              style={{ 
-                height: 'auto', 
-                borderRadius: 0,
-              }}
-            />
-          <Button 
-            type="primary" 
-            icon={<SendOutlined />} 
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
             onClick={handleSend}
             loading={loading}
-            style={{ 
-              height: 'auto', 
-              borderRadius: '0 8px 8px 0',
-              padding: '0 20px'
-            }}
             disabled={!inputValue.trim()}
+            style={{ borderRadius: '0 8px 8px 0' }}
           >
             Отправить
           </Button>

@@ -7,8 +7,9 @@ const { TextArea } = Input;
 const MessageActions = ({
   message,
   onDelete,
-  onEdit, // НОВАЯ функция: (id, newText) => void
+  onEdit, 
   isAI = false,
+  renderTrigger
 }) => {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.content);
