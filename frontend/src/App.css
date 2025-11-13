@@ -1,0 +1,630 @@
+.app-layout {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+/* Хедер */
+.app-header {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px 24px;
+  height: auto;
+  min-height: 70px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e8e8e8;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-content {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+}
+
+.logo-and-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-menu-button {
+  padding: 8px;
+  height: auto;
+  border: none;
+  box-shadow: none;
+}
+
+.mobile-menu-button:hover {
+  background: #f0f0f0;
+}
+
+.app-logo {
+  flex-shrink: 0;
+}
+
+.logo-text {
+  color: #000000;
+  margin: 0 0 0 12px !important;
+  font-weight: 700;
+  font-size: 24px !important;
+  white-space: nowrap;
+}
+
+.auth-section .ant-space {
+  display: flex;
+  align-items: center;
+}
+
+.register-btn {
+  color: #1890ff;
+  border: 1px solid #1890ff;
+  border-radius: 6px;
+  font-weight: 500;
+  height: 36px;
+  padding: 0 16px;
+}
+
+.login-btn {
+  background: #1890ff;
+  border-color: #1890ff;
+  border-radius: 6px;
+  font-weight: 500;
+  height: 36px;
+  padding: 0 16px;
+  color: white !important;
+}
+
+.login-btn:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+.user-welcome {
+  color: #595959;
+  font-size: 14px;
+}
+
+.logout-button {
+  color: #ff4d4f;
+}
+
+.logout-button:hover {
+  color: #ff7875;
+  background: #fff2f0;
+}
+
+/* Основной контент */
+.app-content {
+  padding: 0;
+  height: calc(100vh - 70px);
+}
+
+.main-container {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 100%;
+}
+
+/* Левая панель */
+.sidebar {
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  padding: 20px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.welcome-section {
+  margin-bottom: 24px;
+}
+
+.welcome-title {
+  color: #262626 !important;
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  margin-bottom: 0 !important;
+  line-height: 1.4;
+}
+
+.categories-section {
+  margin-top: 24px;
+}
+
+.categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.categories-title {
+  font-size: 16px;
+  color: #595959;
+  margin: 0;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.category-card {
+  border-radius: 12px !important;
+  border: 2px solid #f0f0f0 !important;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  padding: 8px !important;
+}
+
+.category-card:hover {
+  border-color: #1890ff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15);
+}
+
+.category-card.active {
+  border-color: #1890ff !important;
+  background: #f6ffed;
+}
+
+.category-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0;
+}
+
+.category-icon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.category-card.active .category-icon {
+  background: #e6f7ff;
+}
+
+.category-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-name {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+  color: #262626;
+  font-weight: 600;
+}
+
+.category-description {
+  font-size: 11px !important;
+  line-height: 1.4;
+  display: block;
+  color: #8c8c8c;
+}
+
+/* Правая панель с чатом */
+.chat-panel {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Мобильное меню */
+.mobile-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.mobile-drawer-header .ant-typography {
+  margin: 0 !important;
+}
+
+/* ОЧЕНЬ ВАЖНО: Стили для сайдбара внутри Drawer */
+.ant-drawer-body .sidebar {
+  background: transparent;
+  border-right: none;
+  padding: 0;
+  height: auto;
+  overflow-y: visible;
+}
+
+.ant-drawer-body .welcome-section {
+  margin-bottom: 20px;
+}
+
+.ant-drawer-body .welcome-title {
+  font-size: 18px !important;
+  color: #262626 !important;
+}
+
+.ant-drawer-body .categories-section {
+  margin-top: 20px;
+}
+
+.ant-drawer-body .categories-header {
+  margin-bottom: 16px;
+}
+
+.ant-drawer-body .categories-title {
+  font-size: 14px;
+  color: #595959;
+}
+
+.ant-drawer-body .categories-list {
+  gap: 10px;
+}
+
+.ant-drawer-body .category-card {
+  padding: 10px !important;
+  border: 1px solid #f0f0f0 !important;
+}
+
+.ant-drawer-body .category-content {
+  gap: 10px;
+}
+
+.ant-drawer-body .category-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+}
+
+.ant-drawer-body .category-name {
+  font-size: 14px;
+}
+
+.ant-drawer-body .category-description {
+  font-size: 11px !important;
+}
+
+/* Адаптивность для планшетов */
+@media (max-width: 1024px) {
+  .main-container {
+    grid-template-columns: 280px 1fr;
+  }
+  
+  .sidebar {
+    padding: 16px;
+  }
+  
+  .logo-text {
+    font-size: 20px !important;
+  }
+  
+  .category-content {
+    gap: 10px;
+  }
+  
+  .category-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+  }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 8px 16px;
+    height: 60px;
+  }
+  
+  .logo-text {
+    font-size: 18px !important;
+    margin-left: 8px !important;
+  }
+  
+  .app-logo {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .mobile-hidden {
+    display: none !important;
+  }
+  
+  .mobile-only {
+    display: inline-block;
+  }
+  
+  .auth-section .ant-space {
+    gap: 8px;
+  }
+  
+  .login-button,
+  .logout-button {
+    min-width: auto;
+    padding: 8px 12px;
+  }
+  
+  .main-container {
+    grid-template-columns: 1fr;
+    height: calc(100vh - 60px);
+  }
+  
+  .sidebar {
+    display: none; /* Скрываем обычный сайдбар на мобилках */
+  }
+  
+  .chat-panel {
+    height: 100%;
+  }
+  
+  .welcome-title {
+    font-size: 18px !important;
+  }
+  
+  .categories-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .categories-title {
+    font-size: 14px;
+  }
+  
+  .category-card {
+    padding: 12px !important;
+  }
+  
+  .category-content {
+    gap: 12px;
+  }
+  
+  .category-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .category-name {
+    font-size: 16px;
+  }
+  
+  .category-description {
+    font-size: 12px !important;
+  }
+}
+
+/* Адаптивность для очень маленьких экранов */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 6px 12px;
+  }
+  
+  .logo-text {
+    font-size: 16px !important;
+    margin-left: 6px !important;
+  }
+  
+  .app-logo {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .mobile-menu-button {
+    padding: 6px;
+  }
+  
+  .login-button,
+  .logout-button {
+    padding: 6px 10px;
+  }
+  
+  .sidebar {
+    padding: 12px;
+  }
+  
+  .welcome-title {
+    font-size: 16px !important;
+  }
+  
+  .categories-list {
+    gap: 8px;
+  }
+  
+  .category-card {
+    padding: 10px !important;
+  }
+  
+  .category-content {
+    gap: 10px;
+  }
+  
+  .category-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+  
+  .category-name {
+    font-size: 14px;
+  }
+  
+  .category-description {
+    font-size: 11px !important;
+  }
+}
+
+/* Портретная ориентация на мобильных */
+@media (max-width: 768px) and (orientation: portrait) {
+  .app-content {
+    height: calc(100vh - 60px);
+  }
+  
+  .main-container {
+    height: 100%;
+  }
+}
+
+/* Ландшафтная ориентация на мобильных */
+@media (max-width: 900px) and (orientation: landscape) {
+  .app-header {
+    height: 50px;
+    padding: 4px 16px;
+  }
+  
+  .app-content {
+    height: calc(100vh - 50px);
+  }
+  
+  .logo-text {
+    font-size: 16px !important;
+  }
+  
+  .app-logo {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* Улучшения для Touch устройств */
+@media (hover: none) and (pointer: coarse) {
+  .category-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .category-card:active {
+    background: #f0f0f0;
+    transform: scale(0.98);
+  }
+  
+  .mobile-menu-button:active,
+  .login-button:active,
+  .logout-button:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Улучшения доступности */
+@media (prefers-reduced-motion: reduce) {
+  .category-card {
+    transition: none;
+  }
+  
+  .category-card:hover {
+    transform: none;
+  }
+}
+
+/* Стили для мобильного сайдбара */
+.mobile-sidebar {
+  background: transparent;
+}
+
+.mobile-welcome-section {
+  margin-bottom: 20px;
+}
+
+.mobile-welcome-title {
+  color: #262626 !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  margin-bottom: 0 !important;
+  line-height: 1.4;
+}
+
+.mobile-categories-section {
+  margin-top: 20px;
+}
+
+.mobile-categories-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mobile-categories-title {
+  font-size: 14px;
+  color: #595959;
+  margin: 0;
+}
+
+.mobile-categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-category-card {
+  border-radius: 12px !important;
+  border: 1px solid #f0f0f0 !important;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  padding: 12px !important;
+}
+
+.mobile-category-card:hover {
+  border-color: #1890ff !important;
+}
+
+.mobile-category-card.mobile-active {
+  border-color: #1890ff !important;
+  background: #f6ffed;
+}
+
+.mobile-category-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mobile-category-icon {
+  font-size: 20px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.mobile-category-card.mobile-active .mobile-category-icon {
+  background: #e6f7ff;
+}
+
+.mobile-category-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-category-name {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 2px;
+  color: #262626;
+  font-weight: 600;
+}
+
+.mobile-category-description {
+  font-size: 11px !important;
+  line-height: 1.4;
+  display: block;
+  color: #8c8c8c;
+}
