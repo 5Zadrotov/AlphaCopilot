@@ -83,12 +83,12 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
       setUnreadCategories(newUnread);
       localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
       if (onUnreadUpdate) {
-        onUnreadUpdate(newUnread.size);
+        onUnreadUpdate(newUnread); // ВОССТАНАВЛИВАЕМ правильную передачу Set
       }
     }
   }, [activeCategory, unreadCategories, onUnreadUpdate]);
 
-  // === Скролл вниз — ИСПРАВЛЕНО: проверка на наличие сообщений ===
+  // === Скролл вниз ===
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -111,7 +111,7 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
       timestamp: new Date(),
     };
     setMessages(prev => ({ ...prev, [activeCategory]: [welcome] }));
-  }, [activeCategory, categories, currentUser]);
+  }, [activeCategory, categories, currentUser, messages]);
 
   const getWelcomeMessage = (id, name) => {
     const map = {
@@ -123,7 +123,8 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     };
     return map[id] || map.general;
   };
-// === Копирование ===
+
+  // === Копирование ===
   const handleCopyMessage = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -246,13 +247,25 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     setInputValue('');
     setLoading(true);
 
-    // Помечаем другие категории как непрочитанные
-    let newCount = 0;
+    // ВОССТАНАВЛИВАЕМ правильную логику уведомлений
     categories.forEach(cat => {
-      if (cat.id !== activeCategory) newCount++;
+      if (cat.id !== activeCategory && !unreadCategories.has(cat.id)) {
+        const newUnread = new Set(unreadCategories);
+        newUnread.add(cat.id);
+        setUnreadCategories(newUnread);
+        localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
+      }
     });
+
+    // Передаем обновленный Set в родительский компонент
     if (onUnreadUpdate) {
-      onUnreadUpdate(newCount);
+      const newUnread = new Set(unreadCategories);
+      categories.forEach(cat => {
+        if (cat.id !== activeCategory) {
+          newUnread.add(cat.id);
+        }
+      });
+      onUnreadUpdate(newUnread);
     }
 
     // Ответ бота
@@ -270,7 +283,8 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
       setLoading(false);
     }, 1000 + Math.random() * 1000);
   };
-const getCategoryResponse = (id, msg) => {
+
+  const getCategoryResponse = (id, msg) => {
     const lower = msg.toLowerCase();
     const res = {
       finance: { default: 'Помогу с финансами. Уточните вопрос.' },
@@ -362,7 +376,8 @@ const getCategoryResponse = (id, msg) => {
         )}
         <div ref={messagesEndRef} />
       </div>
-{/* Загрузка файлов */}
+
+      {/* Загрузка файлов */}
       {showFileUpload && <FileUpload onFilesUpload={handleFilesUpload} />}
 
       {/* Поле ввода */}
