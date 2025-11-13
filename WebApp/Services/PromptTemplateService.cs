@@ -31,8 +31,8 @@ namespace WebApp.Services
         {
             var systemPrompt = _systemPrompts.GetValueOrDefault(category, _systemPrompts["Юридическое"]);
 
-            return $"{systemPrompt}\n\n" +
-                   $"Вопрос пользователя: {userInput}\n\n" +
+            return $"{systemPrompt}" + Environment.NewLine + Environment.NewLine +
+                   $"Вопрос пользователя: {userInput}" + Environment.NewLine + Environment.NewLine +
                    "Ответ:";
         }
     }

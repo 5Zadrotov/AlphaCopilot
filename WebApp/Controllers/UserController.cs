@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp.Data;
-using WebApp.Models.DbModels;
+using WebApp.Models.Dto;
 
 namespace WebApp.Controllers
 {
@@ -50,11 +50,6 @@ namespace WebApp.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(new { message = "Profile updated" });
-        }
-
-        public class UpdateProfileRequest
-        {
-            public string? FullName { get; set; }
         }
     }
 }

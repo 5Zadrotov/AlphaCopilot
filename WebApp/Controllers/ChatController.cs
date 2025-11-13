@@ -20,7 +20,7 @@ namespace WebApp.Controllers
         private readonly ILlmLogService _llmLogService = llmLogService;
         private readonly ILogger<ChatController> _logger = logger;
 
-        // POST api/Chat/message  (создать/использовать сессию, сохранить сообщения, получить ответ AI)
+        // POST api/Chat/message
         [HttpPost("message")]
         public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
         {
@@ -212,11 +212,11 @@ namespace WebApp.Controllers
             });
         }
 
-        // PATCH api/Chat/message/{messageId}  (редактирование собственного сообщения)
+        // PATCH api/Chat/message/{messageId}
         [HttpPatch("message/{messageId:guid}")]
         public async Task<IActionResult> EditMessage(Guid messageId, [FromBody] EditMessageRequest request)
         {
-            if (request == null || string.IsNullOrWhiteSpace(request.Content))
+            if (request is null || string.IsNullOrWhiteSpace(request.Content))
                 return BadRequest(new { message = "Content обязателен" });
 
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -256,11 +256,6 @@ namespace WebApp.Controllers
             return NoContent();
         }
 
-        public class EditMessageRequest
-        {
-            public string Content { get; set; } = string.Empty;
-        }
-
         // POST api/Chat/feedback
         [HttpPost("feedback")]
         public async Task<IActionResult> Feedback([FromBody] FeedbackRequest request)
@@ -290,13 +285,6 @@ namespace WebApp.Controllers
             }
 
             return Ok(new { message = "Feedback saved" });
-        }
-
-        public class FeedbackRequest
-        {
-            public Guid MessageId { get; set; }
-            public int Rating { get; set; } = 0;
-            public string? Comment { get; set; }
         }
     }
 }

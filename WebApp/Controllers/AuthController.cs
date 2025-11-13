@@ -9,7 +9,7 @@ namespace WebApp.Controllers
     public class AuthController(IAuthService authService) : ControllerBase
     {
         private readonly IAuthService _authService = authService;
-
+        // POST api/auth/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AuthRequest request)
         {
@@ -22,7 +22,7 @@ namespace WebApp.Controllers
 
             return Ok(authResponse);
         }
-
+        // POST api/auth/register
         [HttpPost("register")]
         public IActionResult Register([FromBody] UserRegistrationRequest request)
         {

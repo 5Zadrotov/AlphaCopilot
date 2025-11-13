@@ -44,13 +44,6 @@ namespace WebApp.Controllers
             });
         }
 
-        public class SessionUpdateRequest
-        {
-            public string? Title { get; set; }
-            public string? SelectedCategory { get; set; }
-            public string? BusinessType { get; set; }
-        }
-
         // PATCH api/Session/{sessionId}
         [HttpPatch("{sessionId}")]
         public async Task<IActionResult> UpdateSession(string sessionId, [FromBody] SessionUpdateRequest request)
