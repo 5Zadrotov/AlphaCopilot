@@ -37,6 +37,14 @@ internal class Program
         builder.Services.AddScoped<IDataService, DataService>();
         builder.Services.AddScoped<IPromptTemplateService, PromptTemplateService>();
         builder.Services.AddScoped<ILlmLogService, LlmLogService>(); // регистрация сервиса логов
+        builder.Services.AddScoped<IIdempotencyService, IdempotencyService>(); // регистрация идемпотентности
+        // Регистрация AI (если ещё не сделано)
+        builder.Services.AddHttpClient<IAiService, OpenRouterService>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.openrouter.ai/");
+            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            client.Timeout = TimeSpan.FromSeconds(60);
+        });
 
         // Add authentication
         builder.Services.AddAuthentication(options =>

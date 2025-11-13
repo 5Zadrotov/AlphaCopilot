@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WebApp.Data;
+using WebApp.Interfaces;
 using WebApp.Models.DbModels;
 using WebApp.Models.Dto;
 
@@ -146,6 +147,21 @@ namespace WebApp.Controllers
                 return Unauthorized("Неверный формат идентификатора пользователя");
             }
 
+            var idempotencyKey = Request.Headers.TryGetValue("Idempotency-Key", out Microsoft.Extensions.Primitives.StringValues value) ? value.FirstOrDefault() : null;
+            if (!string.IsNullOrWhiteSpace(idempotencyKey))
+            {
+                var existing = await HttpContext.RequestServices.GetRequiredService<IIdempotencyService>().TryGetAsync(idempotencyKey, userId);
+                if (existing.Found)
+                {
+                    return new ContentResult
+                    {
+                        Content = existing.ResponseJson,
+                        ContentType = "application/json",
+                        StatusCode = existing.StatusCode
+                    };
+                }
+            }
+
             var session = new ChatSession
             {
                 Id = Guid.NewGuid(),
@@ -163,8 +179,13 @@ namespace WebApp.Controllers
                 await _db.ChatSessions.AddAsync(session);
                 await _db.SaveChangesAsync();
 
+                var resp = new { sessionId = session.SessionId, message = "Новая сессия создана" };
+                var json = System.Text.Json.JsonSerializer.Serialize(resp, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+                if (!string.IsNullOrWhiteSpace(idempotencyKey))
+                    await HttpContext.RequestServices.GetRequiredService<IIdempotencyService>().SaveAsync(idempotencyKey, userId, "POST", HttpContext.Request.Path, 200, json, TimeSpan.FromDays(7));
+
                 _logger.LogInformation("Created new chat session {SessionId} for user {UserId}.", session.SessionId, userId);
-                return Ok(new { sessionId = session.SessionId, message = "Новая сессия создана" });
+                return Ok(resp);
             }
             catch (Exception ex)
             {

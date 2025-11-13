@@ -22,7 +22,25 @@ namespace WebApp.Controllers
             if (to.HasValue) q = q.Where(l => l.CreatedAt <= to.Value);
             q = q.Take(Math.Clamp(limit, 1, 1000));
             var list = await q.ToListAsync();
-            return Ok(list.Select(l => new { l.Id, l.UserId, RequestPreview = (l.RequestText?.Length > 200 ? l.RequestText.Substring(0, 200) + "..." : l.RequestText), ResponsePreview = (l.ResponseText?.Length > 200 ? l.ResponseText.Substring(0, 200) + "..." : l.ResponseText), l.ModelUsed, l.CreatedAt }));
+            return Ok
+            (
+                list.Select(l =>
+                    new
+                    {
+                        l.Id,
+                        l.UserId,
+                        RequestPreview =
+                        (l.RequestText?.Length > 200 ?
+                            string.Concat(l.RequestText.AsSpan(0, 200), "...")
+                            : l.RequestText),
+                        ResponsePreview =
+                        (l.ResponseText?.Length > 200 ?
+                            string.Concat(l.ResponseText.AsSpan(0, 200), "...")
+                            : l.ResponseText),
+                        l.ModelUsed,
+                        l.CreatedAt
+                    })
+            );
         }
 
         // DELETE api/Admin/llmlogs/olderThan?days=30

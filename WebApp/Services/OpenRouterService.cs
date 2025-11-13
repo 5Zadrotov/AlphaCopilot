@@ -77,10 +77,10 @@ namespace WebApp.Services
                     var request = new OpenRouterRequest
                     {
                         Model = "gryphe/mythomist-7b",
-                        Messages = new[]
-                        {
+                        Messages =
+                        [
                             new Message { Role = "user", Content = prompt }
-                        },
+                        ],
                         Temperature = 0.7f,
                         MaxTokens = 1000
                     };
@@ -179,7 +179,7 @@ namespace WebApp.Services
         private static string Truncate(string? value, int maxLength)
         {
             if (string.IsNullOrEmpty(value)) return string.Empty;
-            return value.Length <= maxLength ? value : value.Substring(0, maxLength) + "...";
+            return value.Length <= maxLength ? value : string.Concat(value.AsSpan(0, maxLength), "...");
         }
 
         private class OpenRouterRequest

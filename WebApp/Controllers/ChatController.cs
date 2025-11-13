@@ -31,7 +31,26 @@ namespace WebApp.Controllers
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
                 return Unauthorized(new { message = "Неверный формат идентификатора пользователя" });
 
-            // Найдём или создадим сессию по публичному SessionId (string)
+            // idempotency key from header
+            var idempotencyKey = Request.Headers.TryGetValue("Idempotency-Key", out Microsoft.Extensions.Primitives.StringValues value) ? value.FirstOrDefault() : null;
+            if (!string.IsNullOrWhiteSpace(idempotencyKey))
+            {
+                var idempotencyService = HttpContext.RequestServices.GetRequiredService<IIdempotencyService>();
+                var existing = await idempotencyService.TryGetAsync(idempotencyKey, userId);
+
+                if (existing.Found)
+                {
+                    // return cached JSON with status code
+                    return new ContentResult
+                    {
+                        Content = existing.ResponseJson,
+                        ContentType = "application/json",
+                        StatusCode = existing.StatusCode
+                    };
+                }
+            }
+
+            // --- existing logic to find/create session and save userMessage ---
             ChatSession session;
             if (string.IsNullOrEmpty(request.SessionId))
             {
@@ -111,8 +130,8 @@ namespace WebApp.Controllers
                     {
                         Id = Guid.NewGuid(),
                         UserId = userId,
-                        RequestText = request.Content.Length > 2000 ? request.Content.Substring(0, 2000) + "..." : request.Content,
-                        ResponseText = aiResponse?.Length > 4000 ? aiResponse.Substring(0, 4000) + "..." : aiResponse ?? string.Empty,
+                        RequestText = request.Content.Length > 2000 ? string.Concat(request.Content.AsSpan(0, 2000), "...") : request.Content,
+                        ResponseText = aiResponse?.Length > 4000 ? string.Concat(aiResponse.AsSpan(0, 4000), "...") : aiResponse ?? string.Empty,
                         ModelUsed = null,
                         TokensInput = 0,
                         TokensOutput = 0
@@ -123,17 +142,37 @@ namespace WebApp.Controllers
                     _logger.LogWarning(exLog, "Failed to persist LLM log for user {UserId}.", userId);
                 }
 
-                return Ok(new
+                // prepare response object and json
+                var responseObj = new
                 {
                     sessionId = session.SessionId,
                     userMessage,
                     aiMessage
-                });
+                };
+                var json = System.Text.Json.JsonSerializer.Serialize(responseObj, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+
+                // save idempotency record if key provided
+                if (!string.IsNullOrWhiteSpace(idempotencyKey))
+                {
+                    var idempotency = HttpContext.RequestServices.GetRequiredService<IIdempotencyService>();
+                    await idempotency.SaveAsync(idempotencyKey, userId, "POST", HttpContext.Request.Path, 200, json, TimeSpan.FromDays(7));
+                }
+
+                return Ok(responseObj);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while processing chat message for user {UserId}.", userId);
-                return StatusCode(500, new { message = $"Ошибка при получении ответа от AI: {ex.Message}" });
+                var err = new { message = $"Ошибка при получении ответа от AI: {ex.Message}" };
+                var errJson = System.Text.Json.JsonSerializer.Serialize(err, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+
+                if (!string.IsNullOrWhiteSpace(Request.Headers["Idempotency-Key"]))
+                {
+                    var idempotency = HttpContext.RequestServices.GetRequiredService<IIdempotencyService>();
+                    await idempotency.SaveAsync(Request.Headers["Idempotency-Key"].FirstOrDefault() ?? string.Empty, userId, "POST", HttpContext.Request.Path, 500, errJson, TimeSpan.FromDays(1));
+                }
+
+                return StatusCode(500, err);
             }
         }
 

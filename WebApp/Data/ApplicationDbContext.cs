@@ -3,10 +3,8 @@ using WebApp.Models.DbModels;
 
 namespace WebApp.Data
 {
-    public class ApplicationDbContext : DbContext
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
-
         public DbSet<User> Users { get; set; }
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
@@ -15,6 +13,7 @@ namespace WebApp.Data
         public DbSet<Recommendation> Recommendations { get; set; }
         public DbSet<LlmLog> LlmLogs { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<IdempotencyRecord> IdempotencyRecords { get; set; } // <- added
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -111,6 +110,17 @@ namespace WebApp.Data
                       .WithMany()
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // IdempotencyRecord configuration
+            modelBuilder.Entity<IdempotencyRecord>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Key).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Path).HasMaxLength(500);
+                entity.Property(e => e.Method).HasMaxLength(10);
+                entity.Property(e => e.ResponseBody).HasMaxLength(10000); // ограничение
+                entity.HasIndex(e => new { e.Key, e.UserId }).IsUnique();
             });
         }
     }
