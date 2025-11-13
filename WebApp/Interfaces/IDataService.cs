@@ -11,5 +11,6 @@ namespace WebApp.Interfaces
         Task<Models.DbModels.ChatSession> GetChatSessionAsync(Guid sessionId, Guid userId);
         Task SaveChatMessageAsync(ChatMessage message);
         bool UserExists(string email);
+        Task<List<ChatMessage>> GetMessagesAsync(Guid sessionId, Guid userId);
     }
 }

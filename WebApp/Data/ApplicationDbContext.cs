@@ -42,10 +42,17 @@ namespace WebApp.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Content).IsRequired();
+                entity.Property(e => e.SessionId).IsRequired();
                 entity.HasOne<User>()
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                // FK к сессии
+                entity.HasOne<ChatSession>()
+                      .WithMany()
+                      .HasForeignKey(e => e.SessionId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             // BusinessDomain configuration

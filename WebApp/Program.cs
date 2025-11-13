@@ -31,9 +31,10 @@ internal partial class Program
         var jwtTokenExpirationHours = int.Parse(builder.Configuration["Jwt:TokenExpirationHours"]!);
 
         // Register services
-        builder.Services.AddScoped<IAuthService, AuthService>(); // <- Scoped, чтобы работать с DbContext
+        builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddScoped<IDataService, DataService>();
         builder.Services.AddScoped<IPromptTemplateService, PromptTemplateService>();
+        builder.Services.AddScoped<ILlmLogService, LlmLogService>(); // регистрация сервиса логов
 
         // Add authentication
         builder.Services.AddAuthentication(options =>
@@ -64,7 +65,7 @@ internal partial class Program
             {
                 Title = "Alpha Business Assistant API",
                 Version = "v1",
-                Description = "API ��� ���������� ������ ������� � ���������� JWT ��������������"
+                Description = "API"
             });
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -127,8 +128,6 @@ internal partial class Program
                 c.RoutePrefix = string.Empty;
             });
         }
-
-        // app.UseHttpsRedirection(); // Отключено для Docker
 
         // Authentication & Authorization middleware
         app.UseAuthentication();
