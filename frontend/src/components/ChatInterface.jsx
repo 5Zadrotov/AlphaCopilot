@@ -30,7 +30,7 @@ const { Text } = Typography;
 
 const getUserChatsKey = (userId) => `sorilotx-chat-history-${userId}`;
 
-const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБИРАЕМ onUnreadUpdate
+const ChatInterface = ({ activeCategory, categories, currentUser }) => {
   const [messages, setMessages] = useState({});
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -39,54 +39,66 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБ
   const [editValue, setEditValue] = useState('');
   const messagesEndRef = useRef(null);
 
-  // === УЛУЧШЕННАЯ Загрузка истории ===
+  // === ПРОСТАЯ И НАДЕЖНАЯ Загрузка истории ===
   useEffect(() => {
+    console.log('=== ЗАГРУЗКА ИСТОРИИ ===');
+    console.log('currentUser:', currentUser);
+    
     if (!currentUser) {
+      console.log('Нет пользователя - очищаем сообщения');
       setMessages({});
       return;
     }
-    
-    const loadChatHistory = () => {
-      try {
-        const key = getUserChatsKey(currentUser.id);
-        const saved = localStorage.getItem(key);
-        
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          console.log('Загружена история:', parsed); // Для отладки
-          
-          // Восстанавливаем даты и убеждаемся что все категории есть
-          const restoredMessages = {};
-          Object.keys(parsed).forEach(categoryId => {
+
+    try {
+      const key = getUserChatsKey(currentUser.id);
+      const saved = localStorage.getItem(key);
+      console.log('Ключ в localStorage:', key);
+      console.log('Найденные данные:', saved);
+
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('Парсинг успешен:', parsed);
+
+        // Восстанавливаем структуру сообщений
+        const restoredMessages = {};
+        Object.keys(parsed).forEach(categoryId => {
+          if (Array.isArray(parsed[categoryId])) {
             restoredMessages[categoryId] = parsed[categoryId].map(msg => ({
               ...msg,
-              timestamp: new Date(msg.timestamp)
+              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
             }));
-          });
-          
-          setMessages(restoredMessages);
-        } else {
-          console.log('Нет сохраненной истории');
-          setMessages({});
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки истории:', error);
+          }
+        });
+
+        console.log('Восстановленные сообщения:', restoredMessages);
+        setMessages(restoredMessages);
+      } else {
+        console.log('Нет сохраненных данных - инициализируем пустой объект');
         setMessages({});
       }
-    };
-
-    loadChatHistory();
+    } catch (error) {
+      console.error('ОШИБКА загрузки:', error);
+      setMessages({});
+    }
   }, [currentUser]);
 
-  // === УЛУЧШЕННОЕ Сохранение истории ===
+  // === ПРОСТОЕ И НАДЕЖНОЕ Сохранение истории ===
   useEffect(() => {
-    if (currentUser && Object.keys(messages).length > 0) {
+    if (!currentUser) return;
+
+    console.log('=== СОХРАНЕНИЕ ИСТОРИИ ===');
+    console.log('Текущие сообщения:', messages);
+    console.log('Ключ для сохранения:', getUserChatsKey(currentUser.id));
+
+    if (Object.keys(messages).length > 0) {
       try {
         const key = getUserChatsKey(currentUser.id);
-        localStorage.setItem(key, JSON.stringify(messages));
-        console.log('История сохранена:', messages); // Для отладки
+        const dataToSave = JSON.stringify(messages);
+        localStorage.setItem(key, dataToSave);
+        console.log('✅ УСПЕШНО сохранено в localStorage');
       } catch (error) {
-        console.error('Ошибка сохранения истории:', error);
+        console.error('❌ ОШИБКА сохранения:', error);
       }
     }
   }, [messages, currentUser]);
@@ -104,8 +116,10 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБ
   useEffect(() => {
     if (!currentUser) return;
     
-    // Создаем приветственное сообщение только если категория пустая
-    if (!messages[activeCategory] || messages[activeCategory].length === 0) {
+    // Создаем приветственное сообщение только если категория не существует
+    if (!messages[activeCategory]) {
+      console.log('Создаем приветственное сообщение для категории:', activeCategory);
+      
       const cat = categories.find(c => c.id === activeCategory);
       const welcome = {
         id: Date.now(),
@@ -114,10 +128,14 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБ
         timestamp: new Date(),
       };
       
-      setMessages(prev => ({ 
-        ...prev, 
-        [activeCategory]: [welcome] 
-      }));
+      setMessages(prev => {
+        const newMessages = {
+          ...prev,
+          [activeCategory]: [welcome]
+        };
+        console.log('Новые сообщения после приветствия:', newMessages);
+        return newMessages;
+      });
     }
   }, [activeCategory, categories, currentUser, messages]);
 
@@ -220,10 +238,16 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБ
       timestamp: new Date(),
       files,
     };
-    setMessages(prev => ({ 
-      ...prev, 
-      [activeCategory]: [...(prev[activeCategory] || []), msg] 
-    }));
+    
+    setMessages(prev => {
+      const newMessages = {
+        ...prev, 
+        [activeCategory]: [...(prev[activeCategory] || []), msg] 
+      };
+      console.log('Сообщения после загрузки файлов:', newMessages);
+      return newMessages;
+    });
+    
     setShowFileUpload(false);
 
     setTimeout(() => {
@@ -233,10 +257,15 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБ
         sender: 'bot',
         timestamp: new Date()
       };
-      setMessages(prev => ({ 
-        ...prev, 
-        [activeCategory]: [...(prev[activeCategory] || []), bot] 
-      }));
+      
+      setMessages(prev => {
+        const newMessages = {
+          ...prev, 
+          [activeCategory]: [...(prev[activeCategory] || []), bot] 
+        };
+        console.log('Сообщения после ответа бота:', newMessages);
+        return newMessages;
+      });
     }, 2000);
   };
 
@@ -255,10 +284,18 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБ
       timestamp: new Date()
     };
 
-    setMessages(prev => ({
-      ...prev,
-      [activeCategory]: [...(prev[activeCategory] || []), userMessage]
-    }));
+    console.log('Отправка сообщения:', userMessage);
+
+    setMessages(prev => {
+      const currentCategoryMessages = prev[activeCategory] || [];
+      const newMessages = {
+        ...prev,
+        [activeCategory]: [...currentCategoryMessages, userMessage]
+      };
+      console.log('Сообщения после отправки пользователя:', newMessages);
+      return newMessages;
+    });
+    
     setInputValue('');
     setLoading(true);
 
@@ -270,10 +307,17 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБ
         sender: 'bot',
         timestamp: new Date()
       };
-      setMessages(prev => ({
-        ...prev,
-        [activeCategory]: [...(prev[activeCategory] || []), botMessage]
-      }));
+      
+      setMessages(prev => {
+        const currentCategoryMessages = prev[activeCategory] || [];
+        const newMessages = {
+          ...prev,
+          [activeCategory]: [...currentCategoryMessages, botMessage]
+        };
+        console.log('Сообщения после ответа бота:', newMessages);
+        return newMessages;
+      });
+      
       setLoading(false);
     }, 1000 + Math.random() * 1000);
   };
