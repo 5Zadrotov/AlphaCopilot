@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using WebApp.Data;
 using WebApp.Interfaces;
 using WebApp.Models.DbModels;
@@ -23,20 +24,12 @@ namespace WebApp.Controllers
         [HttpPost("message")]
         public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
         {
-            _logger.LogInformation("Incoming chat message (category={Category})", request?.Category ?? "null");
-
             if (request == null || string.IsNullOrWhiteSpace(request.Content))
-            {
-                _logger.LogWarning("Empty chat message received.");
                 return BadRequest(new { message = "Сообщение не может быть пустым" });
-            }
 
             var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
-            {
-                _logger.LogWarning("Unauthorized request or invalid user id in token.");
                 return Unauthorized(new { message = "Неверный формат идентификатора пользователя" });
-            }
 
             // Найдём или создадим сессию по публичному SessionId (string)
             ChatSession session;
@@ -55,14 +48,12 @@ namespace WebApp.Controllers
                 };
                 await _db.ChatSessions.AddAsync(session);
                 await _db.SaveChangesAsync();
-                _logger.LogInformation("Created new chat session {SessionId} for user {UserId}.", session.SessionId, userId);
             }
             else
             {
                 session = await _db.ChatSessions.FirstOrDefaultAsync(s => s.SessionId == request.SessionId && s.UserId == userId);
                 if (session == null)
                 {
-                    // создаём, если не найдено
                     session = new ChatSession
                     {
                         Id = Guid.NewGuid(),
@@ -76,11 +67,9 @@ namespace WebApp.Controllers
                     };
                     await _db.ChatSessions.AddAsync(session);
                     await _db.SaveChangesAsync();
-                    _logger.LogInformation("Created missing chat session {SessionId} for user {UserId}.", session.SessionId, userId);
                 }
             }
 
-            // Сохраняем сообщение пользователя
             var userMessage = new ChatMessage
             {
                 Id = Guid.NewGuid(),
@@ -97,7 +86,6 @@ namespace WebApp.Controllers
 
             try
             {
-                _logger.LogDebug("Calling IAiService for user {UserId}, session {SessionId}.", userId, session.SessionId);
                 var aiResponse = await _aiService.GetResponseAsync(request.Content, request.Category, userId);
 
                 var aiMessage = new ChatMessage
@@ -112,21 +100,19 @@ namespace WebApp.Controllers
                 };
 
                 await _db.ChatMessages.AddAsync(aiMessage);
-                // обновим lastActivity сессии
                 session.LastActivity = DateTime.UtcNow;
                 _db.ChatSessions.Update(session);
-
                 await _db.SaveChangesAsync();
 
-                // Сохраняем LLM лог (усечённый)
+                // LLM лог
                 try
                 {
                     await _llmLogService.CreateLogAsync(new LlmLog
                     {
                         Id = Guid.NewGuid(),
                         UserId = userId,
-                        RequestText = request.Content.Length > 2000 ? string.Concat(request.Content.AsSpan(0, 2000), "...") : request.Content,
-                        ResponseText = aiResponse?.Length > 4000 ? string.Concat(aiResponse.AsSpan(0, 4000), "...") : aiResponse ?? string.Empty,
+                        RequestText = request.Content.Length > 2000 ? request.Content.Substring(0, 2000) + "..." : request.Content,
+                        ResponseText = aiResponse?.Length > 4000 ? aiResponse.Substring(0, 4000) + "..." : aiResponse ?? string.Empty,
                         ModelUsed = null,
                         TokensInput = 0,
                         TokensOutput = 0
@@ -185,6 +171,93 @@ namespace WebApp.Controllers
                 total,
                 messages
             });
+        }
+
+        // PATCH api/Chat/message/{messageId}  (редактирование собственного сообщения)
+        [HttpPatch("message/{messageId:guid}")]
+        public async Task<IActionResult> EditMessage(Guid messageId, [FromBody] EditMessageRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Content))
+                return BadRequest(new { message = "Content обязателен" });
+
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Unauthorized();
+
+            var message = await _db.ChatMessages.FirstOrDefaultAsync(m => m.Id == messageId);
+            if (message == null) return NotFound(new { message = "Сообщение не найдено" });
+            if (message.UserId != userId) return Forbid();
+
+            if (!message.IsFromUser) return BadRequest(new { message = "Нельзя редактировать сообщение от AI" });
+
+            message.Content = request.Content;
+            message.Timestamp = DateTime.UtcNow;
+
+            _db.ChatMessages.Update(message);
+            await _db.SaveChangesAsync();
+
+            return Ok(message);
+        }
+
+        // DELETE api/Chat/message/{messageId}
+        [HttpDelete("message/{messageId:guid}")]
+        public async Task<IActionResult> DeleteMessage(Guid messageId)
+        {
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Unauthorized();
+
+            var message = await _db.ChatMessages.FirstOrDefaultAsync(m => m.Id == messageId);
+            if (message == null) return NotFound(new { message = "Сообщение не найдено" });
+            if (message.UserId != userId) return Forbid();
+
+            _db.ChatMessages.Remove(message);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        public class EditMessageRequest
+        {
+            public string Content { get; set; } = string.Empty;
+        }
+
+        // POST api/Chat/feedback
+        [HttpPost("feedback")]
+        public async Task<IActionResult> Feedback([FromBody] FeedbackRequest request)
+        {
+            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+                return Unauthorized();
+
+            // Простое сохранение фидбека в LlmLogs (как запись для аналитики)
+            var feedbackText = $"Feedback rating={request.Rating}; comment={request.Comment}";
+            try
+            {
+                await _llmLogService.CreateLogAsync(new LlmLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    RequestText = $"Feedback for message {request.MessageId}",
+                    ResponseText = feedbackText,
+                    ModelUsed = "feedback",
+                    TokensInput = 0,
+                    TokensOutput = 0
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to persist feedback log.");
+            }
+
+            return Ok(new { message = "Feedback saved" });
+        }
+
+        public class FeedbackRequest
+        {
+            public Guid MessageId { get; set; }
+            public int Rating { get; set; } = 0;
+            public string? Comment { get; set; }
         }
     }
 }
