@@ -196,7 +196,6 @@ const MainApp = () => {
             <ChatInterface
               activeCategory={activeCategory}
               categories={allCategories}
-              onUnreadUpdate={handleUnreadUpdate} // ВОССТАНАВЛИВАЕМ правильную передачу
               currentUser={currentUser}
             />
           </div>

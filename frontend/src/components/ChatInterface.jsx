@@ -25,68 +25,71 @@ import FileUpload from './FileUpload';
 import AgentSelector from './MCP';
 import './ChatInterface.css';
 
-// Исправленный импорт TextArea (для Ant Design v5+)
 const TextArea = Input.TextArea;
 const { Text } = Typography;
 
 const getUserChatsKey = (userId) => `sorilotx-chat-history-${userId}`;
 
-const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser }) => {
+const ChatInterface = ({ activeCategory, categories, currentUser }) => { // УБИРАЕМ onUnreadUpdate
   const [messages, setMessages] = useState({});
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
-  const [unreadCategories, setUnreadCategories] = useState(new Set());
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const messagesEndRef = useRef(null);
 
-  // === Загрузка истории ===
+  // === УЛУЧШЕННАЯ Загрузка истории ===
   useEffect(() => {
     if (!currentUser) {
       setMessages({});
       return;
     }
-    const key = getUserChatsKey(currentUser.id);
-    const saved = localStorage.getItem(key);
-    if (saved) {
+    
+    const loadChatHistory = () => {
       try {
-        const parsed = JSON.parse(saved);
-        Object.keys(parsed).forEach(k => {
-          parsed[k] = parsed[k].map(m => ({
-            ...m,
-            timestamp: new Date(m.timestamp)
-          }));
-        });
-        setMessages(parsed);
-      } catch (e) {
-        console.error('Ошибка загрузки чата:', e);
+        const key = getUserChatsKey(currentUser.id);
+        const saved = localStorage.getItem(key);
+        
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          console.log('Загружена история:', parsed); // Для отладки
+          
+          // Восстанавливаем даты и убеждаемся что все категории есть
+          const restoredMessages = {};
+          Object.keys(parsed).forEach(categoryId => {
+            restoredMessages[categoryId] = parsed[categoryId].map(msg => ({
+              ...msg,
+              timestamp: new Date(msg.timestamp)
+            }));
+          });
+          
+          setMessages(restoredMessages);
+        } else {
+          console.log('Нет сохраненной истории');
+          setMessages({});
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки истории:', error);
+        setMessages({});
       }
-    }
+    };
 
-    const unread = localStorage.getItem('sorilotx-unread-categories');
-    if (unread) setUnreadCategories(new Set(JSON.parse(unread)));
+    loadChatHistory();
   }, [currentUser]);
 
-  // === Сохранение истории ===
+  // === УЛУЧШЕННОЕ Сохранение истории ===
   useEffect(() => {
-    if (Object.keys(messages).length > 0 && currentUser) {
-      localStorage.setItem(getUserChatsKey(currentUser.id), JSON.stringify(messages));
-    }
-  }, [messages, currentUser]);
-
-  // === Пометка как прочитано ===
-  useEffect(() => {
-    if (activeCategory && unreadCategories.has(activeCategory)) {
-      const newUnread = new Set(unreadCategories);
-      newUnread.delete(activeCategory);
-      setUnreadCategories(newUnread);
-      localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
-      if (onUnreadUpdate) {
-        onUnreadUpdate(newUnread); // ВОССТАНАВЛИВАЕМ правильную передачу Set
+    if (currentUser && Object.keys(messages).length > 0) {
+      try {
+        const key = getUserChatsKey(currentUser.id);
+        localStorage.setItem(key, JSON.stringify(messages));
+        console.log('История сохранена:', messages); // Для отладки
+      } catch (error) {
+        console.error('Ошибка сохранения истории:', error);
       }
     }
-  }, [activeCategory, unreadCategories, onUnreadUpdate]);
+  }, [messages, currentUser]);
 
   // === Скролл вниз ===
   const scrollToBottom = () => {
@@ -94,23 +97,28 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
   };
 
   useEffect(() => {
-    const currentMsgs = messages[activeCategory];
-    if (currentMsgs && currentMsgs.length > 0) {
-      scrollToBottom();
-    }
-  }, [activeCategory, messages]);
+    scrollToBottom();
+  }, [messages[activeCategory]]);
 
   // === Приветственное сообщение ===
   useEffect(() => {
-    if (!currentUser || messages[activeCategory]) return;
-    const cat = categories.find(c => c.id === activeCategory);
-    const welcome = {
-      id: Date.now(),
-      text: getWelcomeMessage(activeCategory, cat?.name),
-      sender: 'bot',
-      timestamp: new Date(),
-    };
-    setMessages(prev => ({ ...prev, [activeCategory]: [welcome] }));
+    if (!currentUser) return;
+    
+    // Создаем приветственное сообщение только если категория пустая
+    if (!messages[activeCategory] || messages[activeCategory].length === 0) {
+      const cat = categories.find(c => c.id === activeCategory);
+      const welcome = {
+        id: Date.now(),
+        text: getWelcomeMessage(activeCategory, cat?.name),
+        sender: 'bot',
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => ({ 
+        ...prev, 
+        [activeCategory]: [welcome] 
+      }));
+    }
   }, [activeCategory, categories, currentUser, messages]);
 
   const getWelcomeMessage = (id, name) => {
@@ -212,7 +220,10 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
       timestamp: new Date(),
       files,
     };
-    setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), msg] }));
+    setMessages(prev => ({ 
+      ...prev, 
+      [activeCategory]: [...(prev[activeCategory] || []), msg] 
+    }));
     setShowFileUpload(false);
 
     setTimeout(() => {
@@ -222,7 +233,10 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
         sender: 'bot',
         timestamp: new Date()
       };
-      setMessages(prev => ({ ...prev, [activeCategory]: [...(prev[activeCategory] || []), bot] }));
+      setMessages(prev => ({ 
+        ...prev, 
+        [activeCategory]: [...(prev[activeCategory] || []), bot] 
+      }));
     }, 2000);
   };
 
@@ -234,43 +248,23 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
     }
     if (!inputValue.trim()) return;
 
-    const msg = {
+    const userMessage = {
       id: Date.now(),
       text: inputValue.trim(),
       sender: 'user',
       timestamp: new Date()
     };
+
     setMessages(prev => ({
       ...prev,
-      [activeCategory]: [...(prev[activeCategory] || []), msg]
+      [activeCategory]: [...(prev[activeCategory] || []), userMessage]
     }));
     setInputValue('');
     setLoading(true);
 
-    // ВОССТАНАВЛИВАЕМ правильную логику уведомлений
-    categories.forEach(cat => {
-      if (cat.id !== activeCategory && !unreadCategories.has(cat.id)) {
-        const newUnread = new Set(unreadCategories);
-        newUnread.add(cat.id);
-        setUnreadCategories(newUnread);
-        localStorage.setItem('sorilotx-unread-categories', JSON.stringify([...newUnread]));
-      }
-    });
-
-    // Передаем обновленный Set в родительский компонент
-    if (onUnreadUpdate) {
-      const newUnread = new Set(unreadCategories);
-      categories.forEach(cat => {
-        if (cat.id !== activeCategory) {
-          newUnread.add(cat.id);
-        }
-      });
-      onUnreadUpdate(newUnread);
-    }
-
     // Ответ бота
     setTimeout(() => {
-      const bot = {
+      const botMessage = {
         id: Date.now() + 1,
         text: getCategoryResponse(activeCategory, inputValue),
         sender: 'bot',
@@ -278,7 +272,7 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
       };
       setMessages(prev => ({
         ...prev,
-        [activeCategory]: [...(prev[activeCategory] || []), bot]
+        [activeCategory]: [...(prev[activeCategory] || []), botMessage]
       }));
       setLoading(false);
     }, 1000 + Math.random() * 1000);
@@ -286,23 +280,59 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
 
   const getCategoryResponse = (id, msg) => {
     const lower = msg.toLowerCase();
-    const res = {
-      finance: { default: 'Помогу с финансами. Уточните вопрос.' },
-      marketing: { default: 'Маркетинг — это искусство. Что вас интересует?' },
-      legal: { default: 'Юридическая поддержка. Задайте вопрос.' },
-      hr: { default: 'HR — сердце компании. Чем помочь?' },
-      general: { default: 'Спасибо за вопрос! Чем могу помочь?' }
+    const responses = {
+      finance: {
+        default: 'Для финансовых вопросов рекомендую: вести регулярный учет доходов/расходов, использовать УСН для оптимизации налогов, создавать финансовую подушку безопасности.',
+        tax: 'Для ИП на УСН основные налоги: 6% с доходов или 15% с доходов за вычетом расходов. Также нужно платить страховые взносы.',
+        report: 'Основные отчеты для ИП: декларация по УСН (до 30 апреля), отчетность за сотрудников в ПФР, ФСС и ФНС.',
+        planning: 'Для финансового планирования: определите ежемесячные расходы, создайте резервный фонд (3-6 месяцев расходов), планируйте налоги заранее.'
+      },
+      marketing: {
+        default: 'Для маркетинга малого бизнеса: используйте соцсети для вовлечения аудитории, запустите реферальную программу, работайте с отзывами клиентов.',
+        social: 'Для продвижения в соцсетях: публикуйте полезный контент, используйте сторис и reels, взаимодействуйте с аудиторией в комментариях.',
+        promotion: 'Эффективные методы продвижения: локальный SEO, контекстная реклама, сотрудничество с блогерами, email-рассылки.',
+        clients: 'Для привлечения клиентов: предложите бесплатную консультацию, запустите акцию для новых клиентов, используйте отзывы в рекламе.'
+      },
+      legal: {
+        default: 'По юридическим вопросам: всегда заключайте письменные договоры, ведите документацию properly, консультируйтесь со специалистом при сложных вопросах.',
+        contract: 'В договоре обязательно укажите: предмет, сроки, стоимость, ответственность сторон, порядок разрешения споров.',
+        rights: 'Основные права ИП: свободная предпринимательская деятельность, выбор системы налогообложения, защита прав в суде.',
+        compliance: 'Для соблюдения требований: ведите кассовую дисциплину, храните документы 4-5 лет, своевременно сдавайте отчетность.'
+      },
+      hr: {
+        default: 'Для HR вопросов: разработайте четкие должностные инструкции, внедрите систему onboarding, регулярно проводите оценку сотрудников.',
+        hiring: 'При найме сотрудников: составьте понятное описание вакансии, проводите структурированные собеседования, проверяйте рекомендации.',
+        management: 'Для управления персоналом: установите четкие KPI, проводите регулярные встречи 1-на-1, создавайте карьерные треки.',
+        motivation: 'Методы мотивации: конкурентная зарплата, бонусы за результаты, обучение за счет компании, гибкий график.'
+      },
+      general: {
+        default: 'Благодарю за вопрос! Как ИИ-помощник для бизнеса, я могу помочь с финансами, маркетингом, юридическими вопросами и управлением персоналом. Выберите конкретную тему или задайте свой вопрос.'
+      }
     };
-    return (res[id] || res.general).default;
+
+    const categoryResponses = responses[id] || responses.general;
+    
+    if (lower.includes('налог') || lower.includes('налоги')) return categoryResponses.tax || categoryResponses.default;
+    if (lower.includes('отчет') || lower.includes('отчетность')) return categoryResponses.report || categoryResponses.default;
+    if (lower.includes('план') || lower.includes('бюджет')) return categoryResponses.planning || categoryResponses.default;
+    if (lower.includes('соцсет') || lower.includes('instagram')) return categoryResponses.social || categoryResponses.default;
+    if (lower.includes('продвижен') || lower.includes('реклам')) return categoryResponses.promotion || categoryResponses.default;
+    if (lower.includes('клиент') || lower.includes('покупател')) return categoryResponses.clients || categoryResponses.default;
+    if (lower.includes('договор') || lower.includes('контракт')) return categoryResponses.contract || categoryResponses.default;
+    if (lower.includes('права') || lower.includes('обязанност')) return categoryResponses.rights || categoryResponses.default;
+    if (lower.includes('требован') || lower.includes('закон')) return categoryResponses.compliance || categoryResponses.default;
+    if (lower.includes('найм') || lower.includes('сотрудник')) return categoryResponses.hiring || categoryResponses.default;
+    if (lower.includes('управлен') || lower.includes('руководств')) return categoryResponses.management || categoryResponses.default;
+    if (lower.includes('мотивац') || lower.includes('стимул')) return categoryResponses.motivation || categoryResponses.default;
+    
+    return categoryResponses.default;
   };
 
-  // === Безопасное получение сообщений ===
   const currentMessages = messages[activeCategory] || [];
   const currentCategory = categories.find(c => c.id === activeCategory);
 
   return (
     <div className="chat-interface">
-      {/* Заголовок */}
       <div className="chat-header">
         <Space>
           <Avatar size="large" icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
@@ -317,7 +347,6 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
 
       <Divider style={{ margin: '16px 0' }} />
 
-      {/* Сообщения */}
       <div className="messages-container">
         <List
           dataSource={currentMessages}
@@ -377,10 +406,8 @@ const ChatInterface = ({ activeCategory, categories, onUnreadUpdate, currentUser
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Загрузка файлов */}
       {showFileUpload && <FileUpload onFilesUpload={handleFilesUpload} />}
 
-      {/* Поле ввода */}
       <div className="input-container">
         <Space.Compact style={{ width: '100%' }}>
           <AgentSelector />
