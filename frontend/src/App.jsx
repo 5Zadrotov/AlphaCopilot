@@ -28,13 +28,14 @@ const MainApp = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  const defaultCategories = [
-    { id: 'general', name: 'Общий', icon: 'Chat', description: 'Задайте любой вопрос', isDefault: true },
-    { id: 'finance', name: 'Финансы', icon: 'Money', description: 'Налоги, отчетность, планирование', isDefault: true },
-    { id: 'marketing', name: 'Маркетинг', icon: 'Chart', description: 'Продвижение, клиенты, реклама', isDefault: true },
-    { id: 'legal', name: 'Юридическое', icon: 'Scale', description: 'Договоры, права, compliance', isDefault: true },
-    { id: 'hr', name: 'HR', icon: 'People', description: 'Персонал, найм, управление', isDefault: true }
- ];
+   const defaultCategories = [
+    { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
+    { id: 'finance', name: 'Финансы', icon: '💰', description: 'Налоги, отчетность, планирование', isDefault: true },
+    { id: 'marketing', name: 'Маркетинг', icon: '📊', description: 'Продвижение, клиенты, реклама', isDefault: true },
+    { id: 'legal', name: 'Юридическое', icon: '⚖️', description: 'Договоры, права, compliance', isDefault: true },
+    { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление', isDefault: true }
+  ];
+
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
