@@ -8,7 +8,7 @@ import {
 const { Text } = Typography;
 
 const AgentSelector = () => {
-  // Загружаем состояние из localStorage (по умолчанию: web — включён, остальные — выключены)
+  // Загружаем из localStorage
   const [webSearchEnabled, setWebSearchEnabled] = useState(() => {
     const saved = localStorage.getItem('agent-web');
     return saved === null ? true : saved === 'true';
@@ -34,7 +34,7 @@ const AgentSelector = () => {
     return saved === 'true';
   });
 
-  // Сохраняем в localStorage при изменении
+  // Сохраняем при изменении
   useEffect(() => {
     localStorage.setItem('agent-web', webSearchEnabled);
   }, [webSearchEnabled]);
@@ -61,42 +61,47 @@ const AgentSelector = () => {
       label: 'Поиск в сети',
       icon: <GlobalOutlined />,
       enabled: webSearchEnabled,
-      onToggle: () => setWebSearchEnabled(prev => !prev),
+      setEnabled: setWebSearchEnabled,
     },
     {
       key: 'gmail',
       label: 'Gmail',
       icon: <MailOutlined />,
       enabled: gmailEnabled,
-      onToggle: () => setGmailEnabled(prev => !prev),
+      setEnabled: setGmailEnabled,
     },
     {
       key: 'github',
       label: 'GitHub',
       icon: <GithubOutlined />,
       enabled: githubEnabled,
-      onToggle: () => setGithubEnabled(prev => !prev),
+      setEnabled: setGithubEnabled,
     },
     {
       key: 'drive',
       label: 'Google Диск',
       icon: <GoogleOutlined />,
       enabled: driveEnabled,
-      onToggle: () => setDriveEnabled(prev => !prev),
+      setEnabled: setDriveEnabled,
     },
     {
       key: 'calendar',
       label: 'Google Календарь',
       icon: <CalendarOutlined />,
       enabled: calendarEnabled,
-      onToggle: () => setCalendarEnabled(prev => !prev),
+      setEnabled: setCalendarEnabled,
     },
   ];
 
   const menuItems = [
     {
       key: 'header',
-
+      label: (
+        <Space style={{ width: '100%', justifyContent: 'space-between', fontWeight: 'bold' }}>
+          <RobotOutlined />
+          <Text>MCP</Text>
+        </Space>
+      ),
       disabled: true,
     },
     { type: 'divider' },
@@ -111,10 +116,20 @@ const AgentSelector = () => {
           <Switch
             size="small"
             checked={agent.enabled}
-            onChange={agent.onToggle}
+            onChange={(checked, event) => {
+              // Ключевое: останавливаем всплытие события
+              if (event && event.stopPropagation) {
+                event.stopPropagation();
+              }
+              agent.setEnabled(checked);
+            }}
+            onClick={(e) => e.stopPropagation()}
           />
         </Space>
       ),
+      onClick: (e) => {
+        e.domEvent.stopPropagation();
+      },
     })),
     { type: 'divider' },
     {
@@ -133,6 +148,8 @@ return (
       trigger={['click']}
       placement="topLeft"
       overlayStyle={{ width: 280 }}
+      // Отключаем закрытие при клике внутри
+      getPopupContainer={(trigger) => trigger.parentElement}
     >
       <div
         style={{
