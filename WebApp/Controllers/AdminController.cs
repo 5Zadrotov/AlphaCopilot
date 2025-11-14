@@ -14,7 +14,8 @@ namespace WebApp.Controllers
 
         // GET api/Admin/llmlogs
         [HttpGet("llmlogs")]
-        public async Task<IActionResult> GetLlmLogs([FromQuery] Guid? userId = null, [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int limit = 100)
+        public async Task<IActionResult> GetLlmLogs([FromQuery] Guid? userId = null,
+            [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null, [FromQuery] int limit = 100)
         {
             var q = _db.LlmLogs.AsNoTracking().OrderByDescending(l => l.CreatedAt).AsQueryable();
             if (userId.HasValue) q = q.Where(l => l.UserId == userId.Value);
