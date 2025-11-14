@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Net.Http.Headers;
 using System.Text;
 using WebApp.Data;
 using WebApp.Interfaces;
@@ -38,13 +39,7 @@ internal class Program
         builder.Services.AddScoped<IPromptTemplateService, PromptTemplateService>();
         builder.Services.AddScoped<ILlmLogService, LlmLogService>(); // регистрация сервиса логов
         builder.Services.AddScoped<IIdempotencyService, IdempotencyService>(); // регистрация идемпотентности
-        // Регистрация AI (если ещё не сделано)
-        builder.Services.AddHttpClient<IAiService, OpenRouterService>(client =>
-        {
-            client.BaseAddress = new Uri("https://api.openrouter.ai/");
-            client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            client.Timeout = TimeSpan.FromSeconds(60);
-        });
+        builder.Services.AddScoped<OpenRouterService>();
 
         // Add authentication
         builder.Services.AddAuthentication(options =>
@@ -144,7 +139,7 @@ internal class Program
         app.UseAuthorization();
 
         app.MapControllers();
-
+        
         app.Run();
     }
 }

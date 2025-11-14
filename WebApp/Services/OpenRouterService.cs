@@ -1,6 +1,6 @@
-﻿using System.Net.Http.Headers;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
+using RestSharp;
 using WebApp.Interfaces;
 using WebApp.Models.DbModels;
 
@@ -9,17 +9,16 @@ namespace WebApp.Services
     public class OpenRouterService : IAiService
     {
         private static readonly JsonSerializerOptions _jsonSerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-        private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenRouterService> _logger;
         private readonly ILlmLogService _llmLogService;
         private readonly bool _enabled;
         private readonly string _apiKey;
+        private readonly RestClient _restClient;
 
-        public OpenRouterService(IConfiguration configuration, HttpClient httpClient, ILogger<OpenRouterService> logger, ILlmLogService llmLogService)
+        public OpenRouterService(IConfiguration configuration, ILogger<OpenRouterService> logger, ILlmLogService llmLogService)
         {
             _configuration = configuration;
-            _httpClient = httpClient;
             _logger = logger;
             _llmLogService = llmLogService;
 
@@ -34,9 +33,14 @@ namespace WebApp.Services
             {
                 _apiKey = apiKey;
                 _enabled = true;
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-                _httpClient.DefaultRequestHeaders.Add("HTTP-Referer", "http://localhost:5000");
-                _httpClient.DefaultRequestHeaders.Add("X-Title", "AlphaCopilot");
+                
+                // Создаем RestClient с базовым адресом
+                _restClient = new RestClient("https://openrouter.ai");
+                _restClient.AddDefaultHeader("Authorization", $"Bearer {_apiKey}");
+                _restClient.AddDefaultHeader("HTTP-Referer", "http://localhost:5000");
+                _restClient.AddDefaultHeader("X-Title", "AlphaCopilot");
+                _restClient.AddDefaultHeader("Content-Type", "application/json");
+                _restClient.AddDefaultHeader("Accept", "application/json");
             }
         }
 
@@ -86,23 +90,42 @@ namespace WebApp.Services
                     };
 
                     var json = JsonSerializer.Serialize(request, _jsonSerializerOptions);
-                    using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                    var response = await _httpClient.PostAsync("api/v1/chat/completions", content);
+                    // Создаем RestRequest
+                    var restRequest = new RestRequest("api/v1/chat/completions", Method.Post);
+                    restRequest.AddParameter("application/json", json, ParameterType.RequestBody);
 
-                    if (!response.IsSuccessStatusCode)
+                    // Выполняем запрос
+                    var response = await _restClient.ExecuteAsync(restRequest);
+
+                    _logger.LogDebug("OpenRouter response status: {StatusCode}, content preview: {Preview}", 
+                        response.StatusCode, Truncate(response.Content, 500));
+
+                    if (!response.IsSuccessful)
                     {
-                        var status = (int)response.StatusCode;
-                        var body = await response.Content.ReadAsStringAsync();
-                        _logger.LogWarning("OpenRouter returned non-success status {Status} (userId={UserId}). Response preview: {Preview}",
-                            status, userId, Truncate(body, 500));
-                        response.EnsureSuccessStatusCode();
+                        _logger.LogWarning("OpenRouter returned non-success status {StatusCode} (userId={UserId}). Response: {Content}",
+                            response.StatusCode, userId, Truncate(response.Content, 500));
+                        
+                        // Проверяем конкретные ошибки
+                        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        {
+                            _logger.LogError("Unauthorized access to OpenRouter API. Check API key validity.");
+                        }
+                        else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        {
+                            _logger.LogError("OpenRouter API endpoint not found. Check URL and model availability.");
+                        }
+                        
+                        throw new Exception($"API error: {response.StatusCode} - {Truncate(response.Content, 200)}");
                     }
 
-                    var responseJson = await response.Content.ReadAsStringAsync();
-                    _logger.LogDebug("OpenRouter raw response preview (userId={UserId}): {Preview}", userId, Truncate(responseJson, 500));
+                    if (string.IsNullOrWhiteSpace(response.Content))
+                    {
+                        _logger.LogWarning("OpenRouter returned empty response (userId={UserId}).", userId);
+                        throw new Exception("Empty response from API");
+                    }
 
-                    var openRouterResponse = JsonSerializer.Deserialize<OpenRouterResponse>(responseJson, _jsonSerializerOptions);
+                    var openRouterResponse = JsonSerializer.Deserialize<OpenRouterResponse>(response.Content, _jsonSerializerOptions);
 
                     var aiText = openRouterResponse?.Choices?.Length > 0 ? openRouterResponse.Choices[0].Message.Content : null;
 
@@ -127,9 +150,15 @@ namespace WebApp.Services
                     _logger.LogWarning("AI returned empty or malformed response (userId={UserId}).", userId);
                     return "Извините, я не смог сформировать ответ на ваш вопрос.";
                 }
-                catch (HttpRequestException hre) when (attempt < maxAttempts)
+                catch (Exception e) when (attempt < maxAttempts && (e is TaskCanceledException || e.Message.Contains("timeout", StringComparison.OrdinalIgnoreCase)))
                 {
-                    _logger.LogWarning(hre, "HttpRequestException on attempt {Attempt}/{MaxAttempts} for userId={UserId}. Retrying...", attempt, maxAttempts, userId);
+                    _logger.LogWarning(e, "Timeout exception on attempt {Attempt}/{MaxAttempts} for userId={UserId}. Retrying...", attempt, maxAttempts, userId);
+                    await Task.Delay(1000 * attempt);
+                    continue;
+                }
+                catch (Exception e) when (attempt < maxAttempts)
+                {
+                    _logger.LogWarning(e, "Exception on attempt {Attempt}/{MaxAttempts} for userId={UserId}. Retrying...", attempt, maxAttempts, userId);
                     await Task.Delay(1000 * attempt);
                     continue;
                 }
@@ -184,32 +213,32 @@ namespace WebApp.Services
 
         private class OpenRouterRequest
         {
-            public string Model { get; set; }
-            public Message[] Messages { get; set; }
+            public string Model { get; set; } = "gryphe/mythomist-7b";
+            public Message[] Messages { get; set; } = Array.Empty<Message>();
             public float Temperature { get; set; } = 0.7f;
             public int MaxTokens { get; set; } = 1000;
         }
 
         private class Message
         {
-            public string Role { get; set; }
-            public string Content { get; set; }
+            public string Role { get; set; } = "user";
+            public string Content { get; set; } = string.Empty;
         }
 
         private class OpenRouterResponse
         {
-            public Choice[] Choices { get; set; }
+            public Choice[] Choices { get; set; } = Array.Empty<Choice>();
         }
 
         private class Choice
         {
-            public ResponseMessage Message { get; set; }
+            public ResponseMessage Message { get; set; } = new ResponseMessage();
         }
 
         private class ResponseMessage
         {
-            public string Content { get; set; }
-            public string Role { get; set; }
+            public string Content { get; set; } = string.Empty;
+            public string Role { get; set; } = "assistant";
         }
     }
 }

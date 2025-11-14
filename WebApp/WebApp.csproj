@@ -9,10 +9,6 @@
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Google.Apis" Version="1.72.0" />
-    <PackageReference Include="Google.Apis.Auth" Version="1.72.0" />
-    <PackageReference Include="Google.Apis.Core" Version="1.72.0" />
-    <PackageReference Include="Google.Apis.DiscoveryEngine.v1beta" Version="1.72.0.3955" />
-    <PackageReference Include="Google.GenAI" Version="0.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
@@ -21,6 +17,7 @@
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+    <PackageReference Include="RestSharp" Version="112.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="9.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.6" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6" />
