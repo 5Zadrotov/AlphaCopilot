@@ -5,7 +5,6 @@ import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react
 import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
-import DBCleaner from './utils/DBCleaner';
 import MobileSidebar from './components/MobileSidebar';
 import Authorization from './components/Authorization';
 import './App.css';
@@ -17,7 +16,7 @@ const getUserCustomChatsKey = (userId) => `sorilotx-custom-chats-${userId}`;
 
 const MainApp = () => {
   const [activeCategory, setActiveCategory] = useState('general');
-  const [unreadCategories, setUnreadCategories] = useState(new Set()); // ВОССТАНАВЛИВАЕМ правильную логику
+  const [unreadCategories, setUnreadCategories] = useState(new Set());
   const [customChats, setCustomChats] = useState([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
@@ -39,7 +38,6 @@ const MainApp = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // ВОССТАНАВЛИВАЕМ загрузку кастомных чатов
   useEffect(() => {
     if (!currentUser) return;
     const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
@@ -51,7 +49,6 @@ const MainApp = () => {
     }
   }, [currentUser]);
 
-  // ВОССТАНАВЛИВАЕМ сохранение кастомных чатов
   useEffect(() => {
     if (currentUser) {
       const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
@@ -64,7 +61,6 @@ const MainApp = () => {
   const handleCategoryClick = (id) => {
     setActiveCategory(id);
     if (isMobile) setMobileMenuVisible(false);
-    // Убираем категорию из непрочитанных при клике
     if (unreadCategories.has(id)) {
       const newUnread = new Set(unreadCategories);
       newUnread.delete(id);
@@ -78,12 +74,10 @@ const MainApp = () => {
     if (isMobile) setMobileMenuVisible(false);
   };
 
-  // ВОССТАНАВЛИВАЕМ правильную логику уведомлений
   const handleUnreadUpdate = (unreadSet) => {
     setUnreadCategories(unreadSet);
   };
 
-  // Обработчик выхода с редиректом
   const handleLogout = () => {
     logout();
     navigate('/register');
@@ -113,7 +107,7 @@ const MainApp = () => {
           {allCategories.map((cat) => (
             <Badge 
               key={cat.id} 
-              dot={unreadCategories.has(cat.id)} // ВОССТАНАВЛИВАЕМ правильные уведомления
+              dot={unreadCategories.has(cat.id)}
               offset={[-5, 5]} 
               color="red"
             >
@@ -196,6 +190,7 @@ const MainApp = () => {
             <ChatInterface
               activeCategory={activeCategory}
               categories={allCategories}
+              onUnreadUpdate={handleUnreadUpdate}
               currentUser={currentUser}
             />
           </div>
@@ -222,13 +217,12 @@ const MainApp = () => {
             />
           </Drawer>
         )}
-<CreateChatModal
+
+        <CreateChatModal
           visible={createModalVisible}
           onCancel={() => setCreateModalVisible(false)}
           onCreate={handleCreateChat}
         />
-
-        <DBCleaner />
       </Content>
     </Layout>
   );
