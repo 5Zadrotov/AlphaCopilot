@@ -34,13 +34,25 @@ internal class Program
         var jwtTokenExpirationHours = int.Parse(builder.Configuration["Jwt:TokenExpirationHours"]!);
 
         // Register services
-        builder.Services.AddSingleton<IAuthService, AuthService>();
+        builder.Services.AddSingleton<IAuthService, MockAuthService>();
         builder.Services.AddScoped<IDataService, DataService>();
         builder.Services.AddScoped<IPromptTemplateService, PromptTemplateService>();
         builder.Services.AddScoped<IOrganizationService, OrganizationService>(); // Регистрация нового сервиса
         builder.Services.AddScoped<ILlmLogService, LlmLogService>(); // регистрация сервиса логов
         builder.Services.AddScoped<IIdempotencyService, IdempotencyService>(); // регистрация идемпотентности
         builder.Services.AddScoped<OpenRouterService>();
+        builder.Services.AddScoped<IAiService, OpenRouterService>();
+
+        // Add CORS
+        builder.Services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(policy =>
+            {
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            });
+        });
 
         // Add authentication
         builder.Services.AddAuthentication(options =>
@@ -135,6 +147,9 @@ internal class Program
             });
         }
 
+        // CORS middleware
+        app.UseCors();
+        
         // Authentication & Authorization middleware
         app.UseAuthentication();
         app.UseAuthorization();

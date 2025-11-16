@@ -13,39 +13,29 @@ namespace WebApp.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AuthRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-                return BadRequest(new { message = "Email и пароль обязательны" });
+            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest(new { message = "Username и пароль обязательны" });
 
-            var authResponse = await _authService.AuthenticateAsync(request.Email, request.Password);
+            var authResponse = await _authService.AuthenticateAsync(request.Username, request.Password);
             if (authResponse == null)
-                return Unauthorized(new { message = "Неверный email или пароль" });
+                return Unauthorized(new { message = "Неверные данные" });
 
-            return Ok(authResponse);
+            return Ok(new { token = authResponse.Token, userId = authResponse.UserId });
         }
         
         // POST api/auth/register
         [HttpPost("register")]
-        public IActionResult Register([FromBody] UserRegistrationRequest request)
+        public async Task<IActionResult> Register([FromBody] UserRegistrationRequest request)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(new
-                {
-                    message = "Ошибка валидации",
-                    errors = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage))
-                });
+            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest(new { message = "Username и пароль обязательны" });
 
-            var success = _authService.RegisterUser(request.Email, request.Password, request.FullName, out string message);
+            var success = _authService.RegisterUser(request.Username, request.Password, request.Username, out string message);
             if (!success)
-            {
-                if (message.Contains("уже существует") || message.Contains("already exists"))
-                    return Conflict(new { message });
-                if (message.Contains("пароль") || message.Contains("email") || message.Contains("валидация"))
-                    return BadRequest(new { message });
-                return StatusCode(500, new { message = $"Ошибка сервера: {message}" });
-            }
+                return BadRequest(new { message });
 
-            return CreatedAtAction(nameof(Login), new { email = request.Email },
-                new { message = "Пользователь успешно зарегистрирован", email = request.Email });
+            var authResponse = await _authService.AuthenticateAsync(request.Username, request.Password);
+            return Ok(new { token = authResponse?.Token, userId = authResponse?.UserId });
         }
 
         // POST api/auth/refresh

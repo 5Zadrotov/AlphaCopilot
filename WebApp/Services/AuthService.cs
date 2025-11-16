@@ -47,10 +47,8 @@ namespace WebApp.Services
                 return new AuthResponse
                 {
                     Token = jwt,
-                    Email = user.Email,
-                    DisplayName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : user.Email.Split('@')[0],
-                    RefreshToken = refreshTokenPlain,
-                    RefreshTokenExpiresAt = refreshTokenEntity.ExpiresAt
+                    UserId = user.Id.ToString(),
+                    RefreshToken = refreshTokenPlain
                 };
             }
             catch
@@ -134,10 +132,8 @@ namespace WebApp.Services
                 return new AuthResponse
                 {
                     Token = jwt,
-                    Email = user.Email,
-                    DisplayName = !string.IsNullOrEmpty(user.FullName) ? user.FullName : user.Email.Split('@')[0],
-                    RefreshToken = newRefreshPlain,
-                    RefreshTokenExpiresAt = newRefreshEntity.ExpiresAt
+                    UserId = user.Id.ToString(),
+                    RefreshToken = newRefreshPlain
                 };
             }
             catch

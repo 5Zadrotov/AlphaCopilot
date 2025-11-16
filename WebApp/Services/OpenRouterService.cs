@@ -14,7 +14,7 @@ namespace WebApp.Services
         private readonly ILlmLogService _llmLogService;
         private readonly bool _enabled;
         private readonly string _apiKey;
-        private readonly RestClient _restClient;
+        private readonly RestClient? _restClient;
 
         public OpenRouterService(IConfiguration configuration, ILogger<OpenRouterService> logger, ILlmLogService llmLogService)
         {
@@ -34,7 +34,6 @@ namespace WebApp.Services
                 _apiKey = apiKey;
                 _enabled = true;
                 
-                // Создаем RestClient с базовым адресом
                 _restClient = new RestClient("https://openrouter.ai");
                 _restClient.AddDefaultHeader("Authorization", $"Bearer {_apiKey}");
                 _restClient.AddDefaultHeader("HTTP-Referer", "http://localhost:5000");
@@ -52,7 +51,7 @@ namespace WebApp.Services
                 return "Пустой запрос.";
             }
 
-            if (!_enabled)
+            if (!_enabled || _restClient == null)
             {
                 _logger.LogWarning("AI service disabled — returning fallback answer (userId={UserId}).", userId);
                 await _llmLogService.CreateLogAsync(new LlmLog

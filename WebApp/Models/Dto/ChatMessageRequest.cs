@@ -2,8 +2,9 @@
 {
     public class ChatMessageRequest
     {
-        public string Content { get; set; } = string.Empty;
-        public string Category { get; set; } = "Общее";
+        public string Text { get; set; } = string.Empty;
+        public string Content => Text;
+        public string Category { get; set; } = "general";
         public string? SessionId { get; set; }
     }
 }

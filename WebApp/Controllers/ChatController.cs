@@ -19,6 +19,7 @@ namespace WebApp.Controllers
         private static readonly Dictionary<Guid, List<ChatMessage>> _sessions = [];
 
         [HttpPost("message")]
+        [AllowAnonymous]
         public async Task<IActionResult> SendMessage([FromBody] ChatMessageRequest request)
         {
             _logger.LogInformation("Incoming chat message (category={Category})", request?.Category ?? "null");
@@ -29,11 +30,10 @@ namespace WebApp.Controllers
                 return BadRequest("Сообщение не может быть пустым");
             }
 
-            var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+            var userId = Guid.NewGuid();
+            if (!string.IsNullOrEmpty(request.SessionId) && Guid.TryParse(request.SessionId, out var sessionUserId))
             {
-                _logger.LogWarning("Unauthorized request or invalid user id in token.");
-                return Unauthorized("Неверный токен авторизации");
+                userId = sessionUserId;
             }
 
             if (string.IsNullOrEmpty(request.SessionId) || !Guid.TryParse(request.SessionId, out Guid sessionId))
@@ -96,9 +96,9 @@ namespace WebApp.Controllers
 
                 return Ok(new
                 {
+                    message = aiResponse,
                     sessionId = sessionId.ToString(),
-                    userMessage,
-                    aiMessage
+                    success = true
                 });
             }
             catch (Exception ex)
