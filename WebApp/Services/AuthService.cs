@@ -200,7 +200,8 @@ namespace WebApp.Services
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.Email),
                         new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.Role, user.Role??"User")
+                        new Claim(ClaimTypes.Role, user.Role??"User"),
+                        new Claim("OrganizationId",user.OrganizationId.ToString()??"")
                     ]),
                     Expires = DateTime.UtcNow.AddHours(tokenExpirationHours),
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

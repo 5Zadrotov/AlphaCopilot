@@ -37,6 +37,7 @@ internal class Program
         builder.Services.AddSingleton<IAuthService, AuthService>();
         builder.Services.AddScoped<IDataService, DataService>();
         builder.Services.AddScoped<IPromptTemplateService, PromptTemplateService>();
+        builder.Services.AddScoped<IOrganizationService, OrganizationService>(); // Регистрация нового сервиса
         builder.Services.AddScoped<ILlmLogService, LlmLogService>(); // регистрация сервиса логов
         builder.Services.AddScoped<IIdempotencyService, IdempotencyService>(); // регистрация идемпотентности
         builder.Services.AddScoped<OpenRouterService>();
