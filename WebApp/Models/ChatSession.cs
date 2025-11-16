@@ -10,6 +10,6 @@ namespace WebApp.Models
         public string SelectedCategory { get; set; } = "Общее";
         public DateTime StartedAt { get; set; } = DateTime.UtcNow;
         public DateTime LastActivity { get; set; } = DateTime.UtcNow;
-        public List<ChatMessage> Messages { get; set; } = new();
+        public List<ChatMessage> Messages { get; set; } = [];
     }
 }

@@ -43,7 +43,7 @@ namespace WebApp.Services
 
                 await _db.RefreshTokens.AddAsync(refreshTokenEntity);
                 await _db.SaveChangesAsync();
-
+                user.LastLogin = DateTime.UtcNow;
                 return new AuthResponse
                 {
                     Token = jwt,
@@ -199,7 +199,8 @@ namespace WebApp.Services
                     [
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.Email),
-                        new Claim(ClaimTypes.Email, user.Email)
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim(ClaimTypes.Role, user.Role??"User")
                     ]),
                     Expires = DateTime.UtcNow.AddHours(tokenExpirationHours),
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)

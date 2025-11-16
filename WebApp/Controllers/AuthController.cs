@@ -52,11 +52,11 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
-                return BadRequest(new { message = "RefreshToken обязателен" });
+                return BadRequest(new { message = "RefreshToken пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             var authResponse = await _authService.RefreshTokenAsync(request.RefreshToken);
             if (authResponse == null)
-                return Unauthorized(new { message = "Refresh token неверен или истёк" });
+                return Unauthorized(new { message = "Refresh token пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ" });
 
             return Ok(authResponse);
         }
@@ -66,11 +66,11 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
-                return BadRequest(new { message = "RefreshToken обязателен" });
+                return BadRequest(new { message = "RefreshToken пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             var ok = await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
             if (!ok)
-                return NotFound(new { message = "Refresh token не найден" });
+                return NotFound(new { message = "Refresh token пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ" });
 
             return NoContent();
         }

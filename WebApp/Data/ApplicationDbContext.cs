@@ -13,7 +13,7 @@ namespace WebApp.Data
         public DbSet<Recommendation> Recommendations { get; set; }
         public DbSet<LlmLog> LlmLogs { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public DbSet<IdempotencyRecord> IdempotencyRecords { get; set; } // <- added
+        public DbSet<IdempotencyRecord> IdempotencyRecords { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,8 +49,7 @@ namespace WebApp.Data
                     .WithMany()
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
-
-                // FK к сессии
+                    
                 entity.HasOne<ChatSession>()
                       .WithMany()
                       .HasForeignKey(e => e.SessionId)
@@ -119,7 +118,7 @@ namespace WebApp.Data
                 entity.Property(e => e.Key).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Path).HasMaxLength(500);
                 entity.Property(e => e.Method).HasMaxLength(10);
-                entity.Property(e => e.ResponseBody).HasMaxLength(10000); // ограничение
+                entity.Property(e => e.ResponseBody).HasMaxLength(10000);
                 entity.HasIndex(e => new { e.Key, e.UserId }).IsUnique();
             });
         }
