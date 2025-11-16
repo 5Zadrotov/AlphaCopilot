@@ -1,8 +1,28 @@
-﻿.vs
-.vscode
-.github
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# Backend
 WebApp/bin/
 WebApp/obj/
+WebApp/Secrets/
+*.user
 
-postgresql_data
-pgadmin4_data
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env*
+frontend/coverage/
+
+# Docker volumes
+postgresql_data/
+pgadmin4_data/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

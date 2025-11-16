@@ -28,7 +28,7 @@ import './ChatInterface.css';
 const TextArea = Input.TextArea;
 const { Text } = Typography;
 
-const getUserChatsKey = (userId) => `sorilotx-chat-history-${userId}`;
+const getUserChatsKey = (userId) => `chat-history-${userId}`;
 
 const ChatInterface = ({ activeCategory, categories, currentUser }) => {
   const [messages, setMessages] = useState({});
@@ -136,7 +136,7 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
 
   const getWelcomeMessage = (id, name) => {
     const map = {
-      general: 'Здравствуйте! Я СорilotX — ваш ИИ-помощник для бизнеса. Задайте любой вопрос!',
+      general: 'Здравствуйте! Я AlphaCopilot — ваш ИИ-помощник для бизнеса. Задайте любой вопрос!',
       finance: `Добро пожаловать в раздел "${name}"! Помогу с налогами, отчётностью и финансами.`,
       marketing: `Добро пожаловать в раздел "${name}"! Готов помочь с продвижением и клиентами.`,
       legal: `Добро пожаловать в раздел "${name}"! Юридические вопросы — моя специализация.`,
@@ -415,7 +415,7 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
                   ) : (
                     <>
                       <div className="message-header">
-                        <Text strong>{message.sender === 'bot' ? 'SoriPilotX' : currentUser?.username || 'Вы'}</Text>
+                        <Text strong>{message.sender === 'bot' ? 'AlphaCopilot' : currentUser?.username || 'Вы'}</Text>
                         <MessageActions message={message} />
                       </div>
                       <Text className="message-text">

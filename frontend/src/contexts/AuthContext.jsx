@@ -16,55 +16,71 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('sorilotx-current-user');
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser));
+    try {
+      const savedUser = localStorage.getItem('current-user');
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+      }
+    } catch (error) {
+      console.warn('Failed to load user from storage:', error);
     }
     setLoading(false);
   }, []);
 
   const login = (username, password) => {
-    const users = JSON.parse(localStorage.getItem('sorilotx-users') || '[]');
-    const user = users.find(u => u.username === username && u.password === password);
-    
-    if (user) {
-      setCurrentUser(user);
-      localStorage.setItem('sorilotx-current-user', JSON.stringify(user));
-      message.success(`Добро пожаловать, ${username}!`);
-      return true;
-    } else {
-      message.error('Неверный логин или пароль');
+    try {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => u.username === username && u.password === password);
+      
+      if (user) {
+        setCurrentUser(user);
+        localStorage.setItem('current-user', JSON.stringify(user));
+        message.success(`Добро пожаловать, ${username}!`);
+        return true;
+      } else {
+        message.error('Неверный логин или пароль');
+        return false;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      message.error('Ошибка входа');
       return false;
     }
   };
 
   const register = (username, password) => {
-    const users = JSON.parse(localStorage.getItem('sorilotx-users') || '[]');
-    
-    if (users.find(u => u.username === username)) {
-      message.error('Пользователь с таким логином уже существует');
+    try {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      
+      if (users.find(u => u.username === username)) {
+        message.error('Пользователь с таким логином уже существует');
+        return false;
+      }
+      
+      const newUser = {
+        id: Date.now().toString(),
+        username,
+        password,
+        createdAt: new Date().toISOString()
+      };
+      
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+      
+      setCurrentUser(newUser);
+      localStorage.setItem('current-user', JSON.stringify(newUser));
+      message.success('Регистрация прошла успешно!');
+      return true;
+    } catch (error) {
+      console.error('Registration error:', error);
+      message.error('Ошибка регистрации');
       return false;
     }
-    
-    const newUser = {
-      id: Date.now().toString(),
-      username,
-      password,
-      createdAt: new Date().toISOString()
-    };
-    
-    users.push(newUser);
-    localStorage.setItem('sorilotx-users', JSON.stringify(users));
-    
-    setCurrentUser(newUser);
-    localStorage.setItem('sorilotx-current-user', JSON.stringify(newUser));
-    message.success('Регистрация прошла успешно! Начните новый диалог!');
-    return true;
   };
 
   const logout = () => {
     setCurrentUser(null);
-    localStorage.removeItem('sorilotx-current-user');
+    localStorage.removeItem('current-user');
     message.success('Вы вышли из системы');
   };
 

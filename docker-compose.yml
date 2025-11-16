@@ -1,15 +1,15 @@
 services:
   postgres:
-    image: postgres:16 
+    image: postgres:16
     container_name: postgres_server
     restart: unless-stopped
     environment:
-      POSTGRES_USER: admin # login
-      POSTGRES_PASSWORD: admin # password
-      POSTGRES_DB: alphacopilot
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: ${POSTGRES_DB:-alphacopilot}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports: 
+    ports:
       - "5432:5432"
     networks:
       - alphacopilot_network
@@ -20,12 +20,24 @@ services:
       dockerfile: Dockerfile
     container_name: apiserver
     restart: unless-stopped
-    ports:
-      - "8080:8080"
     environment:
       - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
     depends_on:
       - postgres
+    networks:
+      - alphacopilot_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - apiserver
     networks:
       - alphacopilot_network
 

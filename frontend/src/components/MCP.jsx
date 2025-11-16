@@ -9,51 +9,34 @@ const { Text } = Typography;
 
 const AgentSelector = () => {
   // Загружаем состояние из localStorage (по умолчанию: web — включён, остальные — выключены)
-  const [webSearchEnabled, setWebSearchEnabled] = useState(() => {
-    const saved = localStorage.getItem('agent-web');
-    return saved === null ? true : saved === 'true';
-  });
+  const getStoredState = (key, defaultValue = false) => {
+    try {
+      const saved = localStorage.getItem(key);
+      return saved === null ? defaultValue : saved === 'true';
+    } catch {
+      return defaultValue;
+    }
+  };
 
-  const [gmailEnabled, setGmailEnabled] = useState(() => {
-    const saved = localStorage.getItem('agent-gmail');
-    return saved === 'true';
-  });
+  const [webSearchEnabled, setWebSearchEnabled] = useState(() => getStoredState('agent-web', true));
+  const [gmailEnabled, setGmailEnabled] = useState(() => getStoredState('agent-gmail'));
+  const [githubEnabled, setGithubEnabled] = useState(() => getStoredState('agent-github'));
+  const [driveEnabled, setDriveEnabled] = useState(() => getStoredState('agent-drive'));
+  const [calendarEnabled, setCalendarEnabled] = useState(() => getStoredState('agent-calendar'));
 
-  const [githubEnabled, setGithubEnabled] = useState(() => {
-    const saved = localStorage.getItem('agent-github');
-    return saved === 'true';
-  });
+  const saveToStorage = (key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (error) {
+      console.warn('Failed to save to localStorage:', error);
+    }
+  };
 
-  const [driveEnabled, setDriveEnabled] = useState(() => {
-    const saved = localStorage.getItem('agent-drive');
-    return saved === 'true';
-  });
-
-  const [calendarEnabled, setCalendarEnabled] = useState(() => {
-    const saved = localStorage.getItem('agent-calendar');
-    return saved === 'true';
-  });
-
-  // Сохраняем в localStorage при изменении
-  useEffect(() => {
-    localStorage.setItem('agent-web', webSearchEnabled);
-  }, [webSearchEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('agent-gmail', gmailEnabled);
-  }, [gmailEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('agent-github', githubEnabled);
-  }, [githubEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('agent-drive', driveEnabled);
-  }, [driveEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('agent-calendar', calendarEnabled);
-  }, [calendarEnabled]);
+  useEffect(() => saveToStorage('agent-web', webSearchEnabled), [webSearchEnabled]);
+  useEffect(() => saveToStorage('agent-gmail', gmailEnabled), [gmailEnabled]);
+  useEffect(() => saveToStorage('agent-github', githubEnabled), [githubEnabled]);
+  useEffect(() => saveToStorage('agent-drive', driveEnabled), [driveEnabled]);
+  useEffect(() => saveToStorage('agent-calendar', calendarEnabled), [calendarEnabled]);
 
   const agents = [
     {

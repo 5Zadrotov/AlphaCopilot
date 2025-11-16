@@ -11,13 +11,15 @@ const MessageActions = ({
   isAI = false,
 }) => {
   const [editing, setEditing] = useState(false);
-  const [editText, setEditText] = useState(message.content);
+  const [editText, setEditText] = useState(message.content || message.text || '');
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(message.content);
+      const textToCopy = message.content || message.text || '';
+      await navigator.clipboard.writeText(textToCopy);
       message.success('Текст скопирован');
-    } catch {
+    } catch (error) {
+      console.warn('Copy failed:', error);
       message.error('Не удалось скопировать текст');
     }
   };
@@ -27,12 +29,12 @@ const MessageActions = ({
   };
 
   const startEdit = () => {
-    setEditText(message.content);
+    setEditText(message.content || message.text || '');
     setEditing(true);
   };
 
   const cancelEdit = () => {
-    setEditText(message.content);
+    setEditText(message.content || message.text || '');
     setEditing(false);
   };
 
@@ -41,7 +43,8 @@ const MessageActions = ({
       message.warning('Сообщение не может быть пустым');
       return;
     }
-    if (editText.trim() !== message.content) {
+    const originalText = message.content || message.text || '';
+    if (editText.trim() !== originalText) {
       onEdit(message.id, editText.trim());
       message.success('Сообщение обновлено');
     }
