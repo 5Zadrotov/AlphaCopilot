@@ -73,7 +73,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    loading
+    loading,
+    isAuthenticated: !!currentUser // Добавляем флаг аутентификации
   };
 
   return (

@@ -1,52 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Typography, Button, Space, Card, Badge, Drawer } from 'antd';
 import { PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons';
+import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
-import AuthModal from './components/AuthModal';
-import DBCleaner from './utils/DBCleaner';
 import MobileSidebar from './components/MobileSidebar';
+import Authorization from './components/Authorization';
 import './App.css';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-// Хелпер для user-specific кастомных чатов
 const getUserCustomChatsKey = (userId) => `sorilotx-custom-chats-${userId}`;
 
-function App() {
+const MainApp = () => {
   const [activeCategory, setActiveCategory] = useState('general');
   const [unreadCategories, setUnreadCategories] = useState(new Set());
   const [customChats, setCustomChats] = useState([]);
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [authModalVisible, setAuthModalVisible] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const { currentUser, logout } = useAuth();
-
+  const navigate = useNavigate();
+ 
   const defaultCategories = [
     { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
-    { id: 'finance', name: 'Финансы', icon: '💰', description: 'Налоги, отчетность, планирование', isDefault: true },
+    { id: 'finance', name: 'Финансы', icon:'💰' , description: 'Налоги, отчетность, планирование', isDefault: true },
     { id: 'marketing', name: 'Маркетинг', icon: '📊', description: 'Продвижение, клиенты, реклама', isDefault: true },
     { id: 'legal', name: 'Юридическое', icon: '⚖️', description: 'Договоры, права, compliance', isDefault: true },
-    { id: 'hr', name: 'HR', icon: '👥', description: 'Персонал, найм, управление', isDefault: true }
+    { id: 'hr', name: 'HR', icon:'👥' , description: 'Персонал, найм, управление', isDefault: true }
   ];
 
-  // Определение мобильного устройства
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Загрузка кастомных чатов из localStorage
   useEffect(() => {
     if (!currentUser) return;
-
     const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
     const savedCustomChats = localStorage.getItem(userCustomChatsKey);
     if (savedCustomChats) {
@@ -56,9 +49,8 @@ function App() {
     }
   }, [currentUser]);
 
-  // Сохранение кастомных чатов в localStorage
   useEffect(() => {
-    if (customChats.length > 0 && currentUser) {
+    if (currentUser) {
       const userCustomChatsKey = getUserCustomChatsKey(currentUser.id);
       localStorage.setItem(userCustomChatsKey, JSON.stringify(customChats));
     }
@@ -66,14 +58,12 @@ function App() {
 
   const allCategories = [...defaultCategories, ...customChats];
 
-  const handleCategoryClick = (categoryId) => {
-    setActiveCategory(categoryId);
-    if (isMobile) {
-      setMobileMenuVisible(false);
-    }
-    if (unreadCategories.has(categoryId)) {
+  const handleCategoryClick = (id) => {
+    setActiveCategory(id);
+    if (isMobile) setMobileMenuVisible(false);
+    if (unreadCategories.has(id)) {
       const newUnread = new Set(unreadCategories);
-      newUnread.delete(categoryId);
+      newUnread.delete(id);
       setUnreadCategories(newUnread);
     }
   };
@@ -81,30 +71,31 @@ function App() {
   const handleCreateChat = (newChat) => {
     setCustomChats(prev => [...prev, newChat]);
     setActiveCategory(newChat.id);
-    if (isMobile) {
-      setMobileMenuVisible(false);
-    }
+    if (isMobile) setMobileMenuVisible(false);
   };
 
   const handleUnreadUpdate = (unreadSet) => {
     setUnreadCategories(unreadSet);
   };
 
-  // Компонент сайдбара для десктопа
+  const handleLogout = () => {
+    logout();
+    navigate('/register');
+  };
+
   const DesktopSidebar = () => (
     <div className="sidebar">
       <div className="welcome-section">
         <Title level={3} className="welcome-title">
-          {currentUser ? `Привет, ${currentUser.username}!` : 'Привет!'} Чем я могу помочь?
+          {currentUser ? `Привет, ${currentUser.username}! `: 'Привет!'} Чем я могу помочь?
         </Title>
       </div>
-      
       <div className="categories-section">
         <div className="categories-header">
           <Text strong className="categories-title">Темы для обсуждения:</Text>
-          <Button 
-            type="primary" 
-            size="small" 
+          <Button
+            type="primary"
+            size="small"
             icon={<PlusOutlined />}
             onClick={() => setCreateModalVisible(true)}
             disabled={!currentUser}
@@ -112,34 +103,27 @@ function App() {
             Новая тема
           </Button>
         </div>
-        
         <div className="categories-list">
-          {allCategories.map((category) => (
+          {allCategories.map((cat) => (
             <Badge 
-              key={category.id}
-              dot={unreadCategories.has(category.id)}
-              offset={[-5, 5]}
+              key={cat.id} 
+              dot={unreadCategories.has(cat.id)}
+              offset={[-5, 5]} 
               color="red"
             >
-              <Card 
-                className={`category-card ${activeCategory === category.id ? 'active' : ''}`}
+              <Card
+                className={`category-card ${activeCategory === cat.id ? 'active' : ''}`}
                 hoverable
-                onClick={() => handleCategoryClick(category.id)}
+                onClick={() => handleCategoryClick(cat.id)}
               >
                 <div className="category-content">
-                  <div className="category-icon">{category.icon}</div>
+                  <div className="category-icon">{cat.icon}</div>
                   <div className="category-text">
                     <Text strong className="category-name">
-                      {category.name}
-                      {category.isCustom && (
-                        <Text type="secondary" style={{ fontSize: '10px', marginLeft: '4px' }}>
-                          ●
-                        </Text>
-                      )}
+                      {cat.name}
+                      {cat.isCustom && <Text type="secondary" style={{ fontSize: 10, marginLeft: 4 }}>●</Text>}
                     </Text>
-                    <Text type="secondary" className="category-description">
-                      {category.description}
-                    </Text>
+                    <Text type="secondary" className="category-description">{cat.description}</Text>
                   </div>
                 </div>
               </Card>
@@ -157,8 +141,8 @@ function App() {
           <div className="logo-section">
             <div className="logo-and-menu">
               {isMobile && (
-                <Button 
-                  type="text" 
+                <Button
+                  type="text"
                   icon={mobileMenuVisible ? <CloseOutlined /> : <MenuOutlined />}
                   onClick={() => setMobileMenuVisible(!mobileMenuVisible)}
                   className="mobile-menu-button"
@@ -177,18 +161,20 @@ function App() {
               {currentUser ? (
                 <>
                   <Text className="user-welcome mobile-hidden">Привет, {currentUser.username}!</Text>
-                  <Button type="text" icon={<LogoutOutlined />} onClick={logout} className="logout-button">
+                  <Button type="text" icon={<LogoutOutlined />} onClick={handleLogout} className="logout-button">
                     <span className="mobile-hidden">Выйти</span>
                   </Button>
                 </>
               ) : (
                 <>
-                  <Button type="text" onClick={() => setAuthModalVisible(true)} className="mobile-hidden">
-                    Зарегистрироваться
+                  <Button type="text" className="mobile-hidden">
+                    <Link to="/register">Зарегистрироваться</Link>
                   </Button>
-                  <Button type="primary" onClick={() => setAuthModalVisible(true)} className="login-button">
-                    <span className="mobile-hidden">Войти</span>
-                    <UserOutlined className="mobile-only" />
+                  <Button type="primary" className="login-button">
+                    <Link to="/register">
+                      <span className="mobile-hidden">Войти</span>
+                      <UserOutlined className="mobile-only" />
+                    </Link>
                   </Button>
                 </>
               )}
@@ -196,14 +182,13 @@ function App() {
           </div>
         </div>
       </Header>
-      
+
       <Content className="app-content">
         <div className="main-container">
           {!isMobile && <DesktopSidebar />}
-
           <div className="chat-panel">
-            <ChatInterface 
-              activeCategory={activeCategory} 
+            <ChatInterface
+              activeCategory={activeCategory}
               categories={allCategories}
               onUnreadUpdate={handleUnreadUpdate}
               currentUser={currentUser}
@@ -211,7 +196,6 @@ function App() {
           </div>
         </div>
 
-        {/* Мобильное меню с новым компонентом */}
         {isMobile && (
           <Drawer
             title="Меню"
@@ -219,9 +203,7 @@ function App() {
             onClose={() => setMobileMenuVisible(false)}
             open={mobileMenuVisible}
             width={280}
-            styles={{
-              body: { padding: '16px' }
-            }}
+            styles={{ body: { padding: '16px' } }}
           >
             <MobileSidebar
               categories={allCategories}
@@ -241,15 +223,21 @@ function App() {
           onCancel={() => setCreateModalVisible(false)}
           onCreate={handleCreateChat}
         />
-
-        <AuthModal
-          visible={authModalVisible}
-          onCancel={() => setAuthModalVisible(false)}
-        />
-
-        <DBCleaner />
       </Content>
     </Layout>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/register" />} />
+        <Route path="/chat" element={<MainApp />} />
+        <Route path="/register" element={<Authorization />} />
+        <Route path="*" element={<Navigate to="/register" />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
