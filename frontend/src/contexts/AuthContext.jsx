@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { message } from 'antd';
+import { authAPI } from '../utils/api';
 
 const AuthContext = createContext();
 
@@ -27,50 +28,39 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = (username, password) => {
+  const login = async (username, password) => {
     try {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => u.username === username && u.password === password);
+      const response = await authAPI.login({ username, password });
       
-      if (user) {
+      if (response.token) {
+        const user = { id: response.userId, username, token: response.token };
         setCurrentUser(user);
         localStorage.setItem('current-user', JSON.stringify(user));
+        localStorage.setItem('authToken', response.token);
         message.success(`Добро пожаловать, ${username}!`);
         return true;
-      } else {
-        message.error('Неверный логин или пароль');
-        return false;
       }
+      return false;
     } catch (error) {
       console.error('Login error:', error);
-      message.error('Ошибка входа');
+      message.error('Неверные данные для входа');
       return false;
     }
   };
 
-  const register = (username, password) => {
+  const register = async (username, password) => {
     try {
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const response = await authAPI.register({ username, password });
       
-      if (users.find(u => u.username === username)) {
-        message.error('Пользователь с таким логином уже существует');
-        return false;
+      if (response.token) {
+        const user = { id: response.userId, username, token: response.token };
+        setCurrentUser(user);
+        localStorage.setItem('current-user', JSON.stringify(user));
+        localStorage.setItem('authToken', response.token);
+        message.success('Регистрация успешна!');
+        return true;
       }
-      
-      const newUser = {
-        id: Date.now().toString(),
-        username,
-        password,
-        createdAt: new Date().toISOString()
-      };
-      
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-      
-      setCurrentUser(newUser);
-      localStorage.setItem('current-user', JSON.stringify(newUser));
-      message.success('Регистрация прошла успешно!');
-      return true;
+      return false;
     } catch (error) {
       console.error('Registration error:', error);
       message.error('Ошибка регистрации');
@@ -81,6 +71,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem('current-user');
+    localStorage.removeItem('authToken');
     message.success('Вы вышли из системы');
   };
 

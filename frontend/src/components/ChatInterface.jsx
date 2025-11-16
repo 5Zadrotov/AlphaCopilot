@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import FileUpload from './FileUpload';
 import AgentSelector from './MCP';
+import { chatAPI } from '../utils/api';
 import './ChatInterface.css';
 
 const TextArea = Input.TextArea;
@@ -272,7 +273,7 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
   };
 
   // === Отправка сообщения ===
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!currentUser) {
       message.error('Войдите в систему');
       return;
@@ -288,36 +289,56 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
 
     setMessages(prev => {
       const currentCategoryMessages = prev[activeCategory] || [];
-      const newMessages = {
+      return {
         ...prev,
         [activeCategory]: [...currentCategoryMessages, userMessage]
       };
-      return newMessages;
     });
     
+    const messageText = inputValue.trim();
     setInputValue('');
     setLoading(true);
 
-    // Ответ бота
-    setTimeout(() => {
+    try {
+      const response = await chatAPI.sendMessage({
+        text: messageText,
+        category: activeCategory,
+        sessionId: currentUser.id
+      });
+
       const botMessage = {
         id: Date.now() + 1,
-        text: getCategoryResponse(activeCategory, inputValue),
+        text: response.message || 'Получен ответ от сервера',
         sender: 'bot',
         timestamp: new Date()
       };
       
       setMessages(prev => {
         const currentCategoryMessages = prev[activeCategory] || [];
-        const newMessages = {
+        return {
           ...prev,
           [activeCategory]: [...currentCategoryMessages, botMessage]
         };
-        return newMessages;
       });
+    } catch (error) {
+      console.error('API Error:', error);
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: 'Извините, произошла ошибка. Попробуйте позже.',
+        sender: 'bot',
+        timestamp: new Date()
+      };
       
+      setMessages(prev => {
+        const currentCategoryMessages = prev[activeCategory] || [];
+        return {
+          ...prev,
+          [activeCategory]: [...currentCategoryMessages, errorMessage]
+        };
+      });
+    } finally {
       setLoading(false);
-    }, 1000 + Math.random() * 1000);
+    }
   };
 
   const getCategoryResponse = (id, msg) => {

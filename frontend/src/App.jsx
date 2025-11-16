@@ -7,6 +7,7 @@ import ChatInterface from './components/ChatInterface';
 import CreateChatModal from './components/CreateChatModal';
 import MobileSidebar from './components/MobileSidebar';
 import Authorization from './components/Authorization';
+import HealthCheck from './components/HealthCheck';
 import './App.css';
 
 const { Header, Content } = Layout;
@@ -153,7 +154,7 @@ const MainApp = () => {
                 <path d="M20 32L28 40L44 24" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>
                 <path d="M32 20V44" stroke="white" strokeWidth="4" strokeLinecap="round"/>
               </svg>
-              <Title level={2} className="logo-text">СорilotX</Title>
+              <Title level={2} className="logo-text">AlphaCopilot</Title>
             </div>
           </div>
           <div className="auth-section">
@@ -187,6 +188,9 @@ const MainApp = () => {
         <div className="main-container">
           {!isMobile && <DesktopSidebar />}
           <div className="chat-panel">
+            <div style={{ marginBottom: 16 }}>
+              <HealthCheck />
+            </div>
             <ChatInterface
               activeCategory={activeCategory}
               categories={allCategories}

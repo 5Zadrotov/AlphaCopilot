@@ -45,10 +45,19 @@ export const authAPI = {
 };
 
 export const chatAPI = {
-  sendMessage: (message) => apiRequest(API_ENDPOINTS.CHAT.MESSAGES, {
+  sendMessage: (message) => apiRequest(`${API_ENDPOINTS.CHAT.MESSAGES}`, {
     method: 'POST',
-    body: JSON.stringify(message),
+    body: JSON.stringify({
+      text: message.text,
+      category: message.category || 'general',
+      sessionId: message.sessionId
+    }),
   }),
   
   getSessions: () => apiRequest(API_ENDPOINTS.CHAT.SESSIONS),
+  
+  createSession: (data) => apiRequest(API_ENDPOINTS.CHAT.SESSIONS, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
 };
