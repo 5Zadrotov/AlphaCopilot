@@ -22,6 +22,7 @@ namespace WebApp.Controllers
 
             return Ok(authResponse);
         }
+        
         // POST api/auth/register
         [HttpPost("register")]
         public IActionResult Register([FromBody] UserRegistrationRequest request)
@@ -52,11 +53,11 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
-                return BadRequest(new { message = "RefreshToken ����������" });
+                return BadRequest(new { message = "RefreshToken пуст" });
 
             var authResponse = await _authService.RefreshTokenAsync(request.RefreshToken);
             if (authResponse == null)
-                return Unauthorized(new { message = "Refresh token ������� ��� ����" });
+                return Unauthorized(new { message = "Ошибка refresh token" });
 
             return Ok(authResponse);
         }
@@ -66,11 +67,11 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.RefreshToken))
-                return BadRequest(new { message = "RefreshToken ����������" });
+                return BadRequest(new { message = "RefreshToken отсутсвует" });
 
             var ok = await _authService.RevokeRefreshTokenAsync(request.RefreshToken);
             if (!ok)
-                return NotFound(new { message = "Refresh token �� ������" });
+                return NotFound(new { message = "Ошибка refresh token" });
 
             return NoContent();
         }
