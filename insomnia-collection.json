@@ -11,28 +11,12 @@
       "created": 1703000000000,
       "url": "{{ _.baseUrl }}/api/auth/register",
       "name": "Register User",
-      "description": "Регистрация нового пользователя",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"TestPass123!\",\n  \"fullName\": \"Test User\"\n}"
       },
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
+      "headers": [{"name": "Content-Type", "value": "application/json"}],
       "_type": "request"
     },
     {
@@ -42,28 +26,12 @@
       "created": 1703000000000,
       "url": "{{ _.baseUrl }}/api/auth/login",
       "name": "Login User",
-      "description": "Авторизация пользователя",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"TestPass123!\"\n}"
       },
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
+      "headers": [{"name": "Content-Type", "value": "application/json"}],
       "_type": "request"
     },
     {
@@ -73,67 +41,15 @@
       "created": 1703000000000,
       "url": "{{ _.baseUrl }}/api/chat/message",
       "name": "Send Chat Message",
-      "description": "Отправка сообщения в чат",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"content\": \"Привет! Как дела?\",\n  \"category\": \"Общее\",\n  \"sessionId\": \"{{ _.sessionId }}\"\n}"
       },
-      "parameters": [],
       "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        },
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.token }}"
-        }
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
       ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
-      "_type": "request"
-    },
-    {
-      "_id": "req_chat_business",
-      "parentId": "fld_chat",
-      "modified": 1703000000000,
-      "created": 1703000000000,
-      "url": "{{ _.baseUrl }}/api/chat/message",
-      "name": "Business Chat Message",
-      "description": "Бизнес сообщение",
-      "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"content\": \"Помоги составить бизнес-план для IT стартапа\",\n  \"category\": \"Бизнес\",\n  \"sessionId\": \"{{ _.sessionId }}\"\n}"
-      },
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        },
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.token }}"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
       "_type": "request"
     },
     {
@@ -143,31 +59,9 @@
       "created": 1703000000000,
       "url": "{{ _.baseUrl }}/api/chat/history",
       "name": "Get Chat History",
-      "description": "Получение истории чата",
       "method": "GET",
-      "body": {},
-      "parameters": [
-        {
-          "name": "sessionId",
-          "value": "{{ _.sessionId }}",
-          "description": "ID сессии (опционально)"
-        }
-      ],
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.token }}"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
+      "parameters": [{"name": "sessionId", "value": "{{ _.sessionId }}"}],
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
       "_type": "request"
     },
     {
@@ -177,32 +71,15 @@
       "created": 1703000000000,
       "url": "{{ _.baseUrl }}/api/session/new",
       "name": "Create New Session",
-      "description": "Создание новой сессии чата",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
         "text": "{\n  \"businessType\": \"IT Стартап\"\n}"
       },
-      "parameters": [],
       "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        },
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.token }}"
-        }
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
       ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
       "_type": "request"
     },
     {
@@ -212,230 +89,207 @@
       "created": 1703000000000,
       "url": "{{ _.baseUrl }}/api/session/list",
       "name": "Get Sessions List",
-      "description": "Получение списка сессий пользователя",
       "method": "GET",
-      "body": {},
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.token }}"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
       "_type": "request"
     },
     {
-      "_id": "req_auth_invalid_login",
-      "parentId": "fld_tests",
+      "_id": "req_user_profile_get",
+      "parentId": "fld_user",
       "modified": 1703000000000,
       "created": 1703000000000,
-      "url": "{{ _.baseUrl }}/api/auth/login",
-      "name": "❌ Invalid Login",
-      "description": "Тест неверных данных для входа",
-      "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"email\": \"wrong@example.com\",\n  \"password\": \"wrongpass\"\n}"
-      },
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
+      "url": "{{ _.baseUrl }}/api/user/profile",
+      "name": "Get User Profile",
+      "method": "GET",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
       "_type": "request"
     },
     {
-      "_id": "req_chat_empty",
-      "parentId": "fld_tests",
+      "_id": "req_user_profile_update",
+      "parentId": "fld_user",
       "modified": 1703000000000,
       "created": 1703000000000,
-      "url": "{{ _.baseUrl }}/api/chat/message",
-      "name": "❌ Empty Message",
-      "description": "Тест пустого сообщения",
-      "method": "POST",
+      "url": "{{ _.baseUrl }}/api/user/profile",
+      "name": "Update User Profile",
+      "method": "PUT",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"content\": \"\",\n  \"category\": \"Общее\"\n}"
+        "text": "{\n  \"fullName\": \"Updated Name\"\n}"
       },
-      "parameters": [],
       "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        },
-        {
-          "name": "Authorization",
-          "value": "Bearer {{ _.token }}"
-        }
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
       ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
       "_type": "request"
     },
     {
-      "_id": "req_chat_no_auth",
-      "parentId": "fld_tests",
+      "_id": "req_templates_get_all",
+      "parentId": "fld_templates",
       "modified": 1703000000000,
       "created": 1703000000000,
-      "url": "{{ _.baseUrl }}/api/chat/message",
-      "name": "❌ Chat Without Auth",
-      "description": "Тест чата без авторизации",
-      "method": "POST",
-      "body": {
-        "mimeType": "application/json",
-        "text": "{\n  \"content\": \"Тест без токена\",\n  \"category\": \"Общее\"\n}"
-      },
-      "parameters": [],
-      "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
-      ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
+      "url": "{{ _.baseUrl }}/api/templates",
+      "name": "Get All Templates",
+      "method": "GET",
       "_type": "request"
     },
     {
-      "_id": "req_register_duplicate",
-      "parentId": "fld_tests",
+      "_id": "req_templates_get_by_id",
+      "parentId": "fld_templates",
       "modified": 1703000000000,
       "created": 1703000000000,
-      "url": "{{ _.baseUrl }}/api/auth/register",
-      "name": "❌ Duplicate Registration",
-      "description": "Тест повторной регистрации",
+      "url": "{{ _.baseUrl }}/api/templates/{{ _.templateId }}",
+      "name": "Get Template by ID",
+      "method": "GET",
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_create",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates",
+      "name": "Create Template",
       "method": "POST",
       "body": {
         "mimeType": "application/json",
-        "text": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"NewPass123!\",\n  \"fullName\": \"Another User\"\n}"
+        "text": "{\n  \"name\": \"Test Template\",\n  \"description\": \"Test Description\",\n  \"promptTemplate\": \"Hello {name}!\",\n  \"domainId\": 1\n}"
       },
-      "parameters": [],
       "headers": [
-        {
-          "name": "Content-Type",
-          "value": "application/json"
-        }
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"},
+        {"name": "Idempotency-Key", "value": "{{ _.idempotencyKey }}"}
       ],
-      "authentication": {},
-      "metaSortKey": -1703000000000,
-      "isPrivate": false,
-      "settingStoreCookies": true,
-      "settingSendCookies": true,
-      "settingDisableRenderRequestBody": false,
-      "settingEncodeUrl": true,
-      "settingRebuildPath": true,
-      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_update",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates/{{ _.templateId }}",
+      "name": "Update Template",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Updated Template\",\n  \"description\": \"Updated Description\",\n  \"promptTemplate\": \"Updated {name}!\",\n  \"domainId\": 1\n}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_delete",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates/{{ _.templateId }}",
+      "name": "Delete Template",
+      "method": "DELETE",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_llmlogs",
+      "parentId": "fld_admin",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/admin/llmlogs",
+      "name": "Get LLM Logs",
+      "method": "GET",
+      "parameters": [
+        {"name": "userId", "value": ""},
+        {"name": "from", "value": ""},
+        {"name": "to", "value": ""},
+        {"name": "limit", "value": "100"}
+      ],
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.adminToken }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_delete_logs",
+      "parentId": "fld_admin",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/admin/llmlogs/olderThan",
+      "name": "Delete Old Logs",
+      "method": "DELETE",
+      "parameters": [{"name": "days", "value": "30"}],
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.adminToken }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_health",
+      "parentId": "fld_system",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/health",
+      "name": "Health Check",
+      "method": "GET",
       "_type": "request"
     },
     {
       "_id": "fld_auth",
       "parentId": "wrk_main",
-      "modified": 1703000000000,
-      "created": 1703000000000,
       "name": "🔐 Authentication",
-      "description": "Эндпоинты авторизации",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1703000000000,
       "_type": "request_group"
     },
     {
       "_id": "fld_chat",
       "parentId": "wrk_main",
-      "modified": 1703000000000,
-      "created": 1703000000000,
       "name": "💬 Chat",
-      "description": "Эндпоинты чата",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1703000000000,
       "_type": "request_group"
     },
     {
       "_id": "fld_session",
       "parentId": "wrk_main",
-      "modified": 1703000000000,
-      "created": 1703000000000,
       "name": "📋 Sessions",
-      "description": "Управление сессиями",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1703000000000,
       "_type": "request_group"
     },
     {
-      "_id": "fld_tests",
+      "_id": "fld_user",
       "parentId": "wrk_main",
-      "modified": 1703000000000,
-      "created": 1703000000000,
-      "name": "🧪 Error Tests",
-      "description": "Тесты ошибок и граничных случаев",
-      "environment": {},
-      "environmentPropertyOrder": null,
-      "metaSortKey": -1703000000000,
+      "name": "👤 User",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_templates",
+      "parentId": "wrk_main",
+      "name": "📝 Templates",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_admin",
+      "parentId": "wrk_main",
+      "name": "🔧 Admin",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_system",
+      "parentId": "wrk_main",
+      "name": "⚡ System",
       "_type": "request_group"
     },
     {
       "_id": "wrk_main",
       "parentId": null,
-      "modified": 1703000000000,
-      "created": 1703000000000,
       "name": "AlphaCopilot API",
-      "description": "API для тестирования AlphaCopilot приложения",
       "scope": "collection",
       "_type": "workspace"
     },
     {
       "_id": "env_main",
       "parentId": "wrk_main",
-      "modified": 1703000000000,
-      "created": 1703000000000,
       "name": "Base Environment",
       "data": {
-        "baseUrl": "http://localhost:5106",
+        "baseUrl": "http://localhost:8080",
         "token": "",
-        "sessionId": ""
+        "adminToken": "",
+        "sessionId": "",
+        "templateId": "",
+        "idempotencyKey": ""
       },
-      "dataPropertyOrder": {
-        "&": ["baseUrl", "token", "sessionId"]
-      },
-      "color": null,
-      "isPrivate": false,
-      "metaSortKey": 1703000000000,
       "_type": "environment"
     }
   ]
