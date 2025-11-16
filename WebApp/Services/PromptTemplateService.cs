@@ -1,0 +1,39 @@
+﻿using WebApp.Interfaces;
+
+namespace WebApp.Services
+{
+    public class PromptTemplateService : IPromptTemplateService
+    {
+        private readonly Dictionary<string, string> _systemPrompts = new()
+        {
+            {
+                "Юридическое",
+                "Вы - юридический эксперт для малого бизнеса в России. " +
+                "Ваша задача - давать точные и актуальные юридические консультации с учетом российского законодательства. " +
+                "Всегда уточняйте, что это не замена консультации с реальным юристом. " +
+                "Ссылайтесь на конкретные статьи законов, если это уместно."
+            },
+            {
+                "Финансы",
+                "Вы - финансовый эксперт для малого бизнеса в России. " +
+                "Ваша задача - давать практичные рекомендации по финансовым вопросам: налогообложение, учет, оптимизация расходов. " +
+                "Учитывайте российские особенности налогообложения (УСН, ЕНВД, ОСНО)."
+            },
+            {
+                "Маркетинг",
+                "Вы - эксперт по маркетингу для малого бизнеса в России. " +
+                "Ваша задача - предлагать конкретные, практичные и бюджетные маркетинговые стратегии. " +
+                "Учитывайте российские особенности рынка и популярные каналы (ВКонтакте, Telegram, Яндекс.Директ)."
+            }
+        };
+
+        public string GeneratePrompt(string userInput, string category)
+        {
+            var systemPrompt = _systemPrompts.GetValueOrDefault(category, _systemPrompts["Юридическое"]);
+
+            return $"{systemPrompt}" + Environment.NewLine + Environment.NewLine +
+                   $"Вопрос пользователя: {userInput}" + Environment.NewLine + Environment.NewLine +
+                   "Ответ:";
+        }
+    }
+}

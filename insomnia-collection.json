@@ -1,0 +1,296 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2024-12-19T12:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v2023.5.8",
+  "resources": [
+    {
+      "_id": "req_auth_register",
+      "parentId": "fld_auth",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/auth/register",
+      "name": "Register User",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"TestPass123!\",\n  \"fullName\": \"Test User\"\n}"
+      },
+      "headers": [{"name": "Content-Type", "value": "application/json"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_auth_login",
+      "parentId": "fld_auth",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/auth/login",
+      "name": "Login User",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"TestPass123!\"\n}"
+      },
+      "headers": [{"name": "Content-Type", "value": "application/json"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_chat_message",
+      "parentId": "fld_chat",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/chat/message",
+      "name": "Send Chat Message",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"content\": \"Привет! Как дела?\",\n  \"category\": \"Общее\",\n  \"sessionId\": \"{{ _.sessionId }}\"\n}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_chat_history",
+      "parentId": "fld_chat",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/chat/history",
+      "name": "Get Chat History",
+      "method": "GET",
+      "parameters": [{"name": "sessionId", "value": "{{ _.sessionId }}"}],
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_session_new",
+      "parentId": "fld_session",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/session/new",
+      "name": "Create New Session",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"businessType\": \"IT Стартап\"\n}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_session_list",
+      "parentId": "fld_session",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/session/list",
+      "name": "Get Sessions List",
+      "method": "GET",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_user_profile_get",
+      "parentId": "fld_user",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/user/profile",
+      "name": "Get User Profile",
+      "method": "GET",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_user_profile_update",
+      "parentId": "fld_user",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/user/profile",
+      "name": "Update User Profile",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"fullName\": \"Updated Name\"\n}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_get_all",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates",
+      "name": "Get All Templates",
+      "method": "GET",
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_get_by_id",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates/{{ _.templateId }}",
+      "name": "Get Template by ID",
+      "method": "GET",
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_create",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates",
+      "name": "Create Template",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Test Template\",\n  \"description\": \"Test Description\",\n  \"promptTemplate\": \"Hello {name}!\",\n  \"domainId\": 1\n}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"},
+        {"name": "Idempotency-Key", "value": "{{ _.idempotencyKey }}"}
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_update",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates/{{ _.templateId }}",
+      "name": "Update Template",
+      "method": "PUT",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Updated Template\",\n  \"description\": \"Updated Description\",\n  \"promptTemplate\": \"Updated {name}!\",\n  \"domainId\": 1\n}"
+      },
+      "headers": [
+        {"name": "Content-Type", "value": "application/json"},
+        {"name": "Authorization", "value": "Bearer {{ _.token }}"}
+      ],
+      "_type": "request"
+    },
+    {
+      "_id": "req_templates_delete",
+      "parentId": "fld_templates",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/templates/{{ _.templateId }}",
+      "name": "Delete Template",
+      "method": "DELETE",
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.token }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_llmlogs",
+      "parentId": "fld_admin",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/admin/llmlogs",
+      "name": "Get LLM Logs",
+      "method": "GET",
+      "parameters": [
+        {"name": "userId", "value": ""},
+        {"name": "from", "value": ""},
+        {"name": "to", "value": ""},
+        {"name": "limit", "value": "100"}
+      ],
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.adminToken }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_admin_delete_logs",
+      "parentId": "fld_admin",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/admin/llmlogs/olderThan",
+      "name": "Delete Old Logs",
+      "method": "DELETE",
+      "parameters": [{"name": "days", "value": "30"}],
+      "headers": [{"name": "Authorization", "value": "Bearer {{ _.adminToken }}"}],
+      "_type": "request"
+    },
+    {
+      "_id": "req_health",
+      "parentId": "fld_system",
+      "modified": 1703000000000,
+      "created": 1703000000000,
+      "url": "{{ _.baseUrl }}/api/health",
+      "name": "Health Check",
+      "method": "GET",
+      "_type": "request"
+    },
+    {
+      "_id": "fld_auth",
+      "parentId": "wrk_main",
+      "name": "🔐 Authentication",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_chat",
+      "parentId": "wrk_main",
+      "name": "💬 Chat",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_session",
+      "parentId": "wrk_main",
+      "name": "📋 Sessions",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_user",
+      "parentId": "wrk_main",
+      "name": "👤 User",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_templates",
+      "parentId": "wrk_main",
+      "name": "📝 Templates",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_admin",
+      "parentId": "wrk_main",
+      "name": "🔧 Admin",
+      "_type": "request_group"
+    },
+    {
+      "_id": "fld_system",
+      "parentId": "wrk_main",
+      "name": "⚡ System",
+      "_type": "request_group"
+    },
+    {
+      "_id": "wrk_main",
+      "parentId": null,
+      "name": "AlphaCopilot API",
+      "scope": "collection",
+      "_type": "workspace"
+    },
+    {
+      "_id": "env_main",
+      "parentId": "wrk_main",
+      "name": "Base Environment",
+      "data": {
+        "baseUrl": "http://localhost:8080",
+        "token": "",
+        "adminToken": "",
+        "sessionId": "",
+        "templateId": "",
+        "idempotencyKey": ""
+      },
+      "_type": "environment"
+    }
+  ]
+}

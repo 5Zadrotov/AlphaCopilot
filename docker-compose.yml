@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16 
+    container_name: postgres_server
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin # login
+      POSTGRES_PASSWORD: admin # password
+      POSTGRES_DB: alphacopilot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports: 
+      - "5432:5432"
+    networks:
+      - alphacopilot_network
+
+  apiserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apiserver
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      - postgres
+    networks:
+      - alphacopilot_network
+
+networks:
+  alphacopilot_network:
+    name: alphacopilot_network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local 
+    driver_opts:
+      type: none
+      o: bind
+      device: ./postgresql_data
+  pgadmin_data:
+    driver: local 
+    driver_opts:
+      type: none
+      o: bind
+      device: ./pgadmin4_data
