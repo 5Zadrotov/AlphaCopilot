@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using RestSharp;
 using WebApp.Interfaces;
@@ -90,11 +90,9 @@ namespace WebApp.Services
 
                     var json = JsonSerializer.Serialize(request, _jsonSerializerOptions);
 
-                    // Создаем RestRequest
                     var restRequest = new RestRequest("api/v1/chat/completions", Method.Post);
                     restRequest.AddParameter("application/json", json, ParameterType.RequestBody);
 
-                    // Выполняем запрос
                     var response = await _restClient.ExecuteAsync(restRequest);
 
                     _logger.LogDebug("OpenRouter response status: {StatusCode}, content preview: {Preview}", 
@@ -105,7 +103,6 @@ namespace WebApp.Services
                         _logger.LogWarning("OpenRouter returned non-success status {StatusCode} (userId={UserId}). Response: {Content}",
                             response.StatusCode, userId, Truncate(response.Content, 500));
                         
-                        // Проверяем конкретные ошибки
                         if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         {
                             _logger.LogError("Unauthorized access to OpenRouter API. Check API key validity.");

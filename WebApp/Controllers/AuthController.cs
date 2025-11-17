@@ -14,7 +14,7 @@ namespace WebApp.Controllers
         public async Task<IActionResult> Login([FromBody] AuthRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-                return BadRequest(new { message = "Username и пароль обязательны" });
+                return BadRequest(new { message = "Email и пароль обязательны" });
 
             var authResponse = await _authService.AuthenticateAsync(request.Username, request.Password);
             if (authResponse == null)
@@ -27,14 +27,14 @@ namespace WebApp.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] UserRegistrationRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-                return BadRequest(new { message = "Username и пароль обязательны" });
+            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password) || string.IsNullOrWhiteSpace(request.Email))
+                return BadRequest(new { message = "Username, пароль и email обязательны" });
 
-            var success = _authService.RegisterUser(request.Username, request.Password, request.Username, out string message);
+            var success = _authService.RegisterUser(request.Email, request.Password, request.Username, out string message);
             if (!success)
                 return BadRequest(new { message });
 
-            var authResponse = await _authService.AuthenticateAsync(request.Username, request.Password);
+            var authResponse = await _authService.AuthenticateAsync(request.Email, request.Password);
             return Ok(new { token = authResponse?.Token, userId = authResponse?.UserId });
         }
 

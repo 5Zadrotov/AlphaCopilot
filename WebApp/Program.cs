@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Net.Http.Headers;
 using System.Text;
 using WebApp.Data;
 using WebApp.Interfaces;
@@ -22,28 +21,26 @@ internal class Program
             optional: false,
             reloadOnChange: true);
 
-        // Add services to the container.
+        builder.Configuration.AddEnvironmentVariables();
+
         builder.Services.AddControllers();
 
-        // Database Configuration
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-        // JWT Configuration
         var jwtSecretKey = builder.Configuration["Jwt:SecretKey"]!;
         var jwtTokenExpirationHours = int.Parse(builder.Configuration["Jwt:TokenExpirationHours"]!);
 
-        // Register services
-        builder.Services.AddSingleton<IAuthService, MockAuthService>();
+        builder.Services.AddScoped<IAuthService, AuthService>();
+        builder.Services.AddScoped<ApplicationDbContext>();
         builder.Services.AddScoped<IDataService, DataService>();
         builder.Services.AddScoped<IPromptTemplateService, PromptTemplateService>();
-        builder.Services.AddScoped<IOrganizationService, OrganizationService>(); // Регистрация нового сервиса
-        builder.Services.AddScoped<ILlmLogService, LlmLogService>(); // регистрация сервиса логов
-        builder.Services.AddScoped<IIdempotencyService, IdempotencyService>(); // регистрация идемпотентности
-        builder.Services.AddScoped<OpenRouterService>();
+        builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+        builder.Services.AddScoped<ILlmLogService, LlmLogService>();
+        builder.Services.AddScoped<IIdempotencyService, IdempotencyService>();
+        builder.Services.AddScoped<IChatSessionService, ChatSessionService>();
         builder.Services.AddScoped<IAiService, OpenRouterService>();
 
-        // Add CORS
         builder.Services.AddCors(options =>
         {
             options.AddDefaultPolicy(policy =>
@@ -54,7 +51,6 @@ internal class Program
             });
         });
 
-        // Add authentication
         builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -73,7 +69,6 @@ internal class Program
                 };
             });
 
-        // Add endpoints for authorization
         builder.Services.AddAuthorization();
 
         builder.Services.AddEndpointsApiExplorer();
@@ -113,7 +108,6 @@ internal class Program
 
         var app = builder.Build();
 
-        // Apply migrations on startup
         using (var scope = app.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -122,7 +116,7 @@ internal class Program
             {
                 try
                 {
-                    context.Database.EnsureCreated();
+                    context.Database.Migrate();
                     Console.WriteLine("Migrations applied successfully");
                     break;
                 }
@@ -136,7 +130,6 @@ internal class Program
             }
         }
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
@@ -147,13 +140,9 @@ internal class Program
             });
         }
 
-        // CORS middleware
         app.UseCors();
-        
-        // Authentication & Authorization middleware
         app.UseAuthentication();
         app.UseAuthorization();
-
         app.MapControllers();
         
         app.Run();

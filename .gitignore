@@ -8,6 +8,9 @@ WebApp/bin/
 WebApp/obj/
 WebApp/Secrets/
 *.user
+.env
+.env.local
+.env.*.local
 
 # Frontend
 frontend/node_modules/

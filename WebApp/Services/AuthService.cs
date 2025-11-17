@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -66,6 +66,11 @@ namespace WebApp.Services
                     message = "Email обязателен для заполнения.";
                     return false;
                 }
+                if (!IsValidEmail(email))
+                {
+                    message = "Некорректный формат email.";
+                    return false;
+                }
                 if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
                 {
                     message = "Пароль должен содержать не менее 6 символов.";
@@ -74,11 +79,6 @@ namespace WebApp.Services
                 if (_db.Users.Any(u => u.Email == email))
                 {
                     message = "Пользователь с таким email уже существует.";
-                    return false;
-                }
-                if (!IsValidEmail(email))
-                {
-                    message = "Некорректный формат email.";
                     return false;
                 }
 
@@ -117,7 +117,6 @@ namespace WebApp.Services
                 var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == tokenEntity.UserId);
                 if (user == null) return null;
 
-                // rotate: revoke old and create new
                 tokenEntity.RevokedAt = DateTime.UtcNow;
 
                 var (newRefreshPlain, newRefreshEntity) = CreateRefreshTokenForUser(user.Id);
@@ -196,8 +195,8 @@ namespace WebApp.Services
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                         new Claim(ClaimTypes.Name, user.Email),
                         new Claim(ClaimTypes.Email, user.Email),
-                        new Claim(ClaimTypes.Role, user.Role??"User"),
-                        new Claim("OrganizationId",user.OrganizationId.ToString()??"")
+                        new Claim(ClaimTypes.Role, user.Role ?? "User"),
+                        new Claim("OrganizationId", user.OrganizationId.ToString() ?? "")
                     ]),
                     Expires = DateTime.UtcNow.AddHours(tokenExpirationHours),
                     SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
@@ -217,16 +216,7 @@ namespace WebApp.Services
         {
             if (string.IsNullOrWhiteSpace(email))
                 return false;
-
-            try
-            {
-                var addr = new System.Net.Mail.MailAddress(email);
-                return addr.Address == email;
-            }
-            catch
-            {
-                return false;
-            }
+            return email.Contains("@") && email.Contains(".");
         }
     }
 }

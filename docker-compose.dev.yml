@@ -25,12 +25,17 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=Development
+      - OpenRouter__ApiKey=${OpenRouter__ApiKey}
+      - Jwt__SecretKey=${Jwt__SecretKey}
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     depends_on:
       - postgres
     networks:
       - alphacopilot_network
     volumes:
       - ./WebApp:/app:ro
+    env_file:
+      - .env
 
   frontend:
     image: node:18-alpine

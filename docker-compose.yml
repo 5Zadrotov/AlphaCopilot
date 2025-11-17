@@ -20,9 +20,14 @@ services:
       dockerfile: Dockerfile
     container_name: apiserver
     restart: unless-stopped
+    ports:
+      - "8080:8080"
     environment:
       - ASPNETCORE_URLS=http://+:8080
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
+      - OpenRouter__ApiKey=${OpenRouter__ApiKey}
+      - Jwt__SecretKey=${Jwt__SecretKey}
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
     depends_on:
       - postgres
     networks:

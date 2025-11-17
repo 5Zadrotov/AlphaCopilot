@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Typography, Button, Space, Card, Badge, Drawer } from 'antd';
-import { PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined, UserOutlined } from '@ant-design/icons';
+import { Layout, Typography, Button, Space, Card, Badge, Drawer, Switch } from 'antd';
+import { PlusOutlined, LogoutOutlined, MenuOutlined, CloseOutlined, UserOutlined, BgColorsOutlined } from '@ant-design/icons';
 import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import ChatInterface from './components/ChatInterface';
@@ -8,6 +8,8 @@ import CreateChatModal from './components/CreateChatModal';
 import MobileSidebar from './components/MobileSidebar';
 import Authorization from './components/Authorization';
 import HealthCheck from './components/HealthCheck';
+import AnalyticsPanel from './components/AnalyticsPanel';
+import { offlineManager } from './utils/offline';
 import './App.css';
 
 const { Header, Content } = Layout;
@@ -22,8 +24,39 @@ const MainApp = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [darkMode, setDarkMode] = useState(localStorage.getItem('darkMode') === 'true');
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Инициализация offline manager
+  useEffect(() => {
+    offlineManager.init();
+    
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Dark mode
+  useEffect(() => {
+    if (darkMode) {
+      document.body.style.backgroundColor = '#141414';
+      document.body.style.color = '#fff';
+    } else {
+      document.body.style.backgroundColor = '#fff';
+      document.body.style.color = '#000';
+    }
+    localStorage.setItem('darkMode', darkMode);
+  }, [darkMode]);
  
   const defaultCategories = [
     { id: 'general', name: 'Общий', icon: '💬', description: 'Задайте любой вопрос', isDefault: true },
@@ -136,8 +169,8 @@ const MainApp = () => {
   );
 
   return (
-    <Layout className="app-layout">
-      <Header className="app-header">
+    <Layout className="app-layout" style={{ backgroundColor: darkMode ? '#141414' : '#fff' }}>
+      <Header className="app-header" style={{ backgroundColor: darkMode ? '#1f1f1f' : '#fff' }}>
         <div className="header-content">
           <div className="logo-section">
             <div className="logo-and-menu">
@@ -159,6 +192,20 @@ const MainApp = () => {
           </div>
           <div className="auth-section">
             <Space size="middle">
+              {!isOnline && <Text type="danger">📡 Offline</Text>}
+              <Button 
+                type="text" 
+                icon={<BgColorsOutlined />} 
+                onClick={() => setDarkMode(!darkMode)}
+                title={darkMode ? 'Светлая тема' : 'Темная тема'}
+              />
+              <Button 
+                type="text" 
+                onClick={() => setShowAnalytics(!showAnalytics)}
+                title="Аналитика"
+              >
+                📊
+              </Button>
               {currentUser ? (
                 <>
                   <Text className="user-welcome mobile-hidden">Привет, {currentUser.username}!</Text>
@@ -184,18 +231,20 @@ const MainApp = () => {
         </div>
       </Header>
 
-      <Content className="app-content">
+      <Content className="app-content" style={{ backgroundColor: darkMode ? '#141414' : '#fff' }}>
         <div className="main-container">
           {!isMobile && <DesktopSidebar />}
           <div className="chat-panel">
             <div style={{ marginBottom: 16 }}>
               <HealthCheck />
             </div>
+            {showAnalytics && <AnalyticsPanel />}
             <ChatInterface
               activeCategory={activeCategory}
               categories={allCategories}
               onUnreadUpdate={handleUnreadUpdate}
               currentUser={currentUser}
+              darkMode={darkMode}
             />
           </div>
         </div>

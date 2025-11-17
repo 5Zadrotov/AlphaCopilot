@@ -10,6 +10,7 @@ import {
   Divider,
   Dropdown,
   message,
+  Popover,
 } from 'antd';
 import {
   SendOutlined,
@@ -20,34 +21,56 @@ import {
   CopyOutlined,
   DeleteOutlined,
   EditOutlined,
+  DownloadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import FileUpload from './FileUpload';
 import AgentSelector from './MCP';
 import { chatAPI } from '../utils/api';
+import { MessageSkeleton } from './SkeletonLoader';
+import { playNotificationSound } from '../utils/notifications';
 import './ChatInterface.css';
 
 const TextArea = Input.TextArea;
 const { Text } = Typography;
 
+const EMOJI_REACTIONS = ['👍', '👎', '❤️', '😂', '🔥', '🎉'];
+
 const getUserChatsKey = (userId) => `chat-history-${userId}`;
 
-const ChatInterface = ({ activeCategory, categories, currentUser }) => {
+const ChatInterface = ({ activeCategory, categories, currentUser, darkMode }) => {
   const [messages, setMessages] = useState({});
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
-  const [isInitialized, setIsInitialized] = useState(false); // Флаг инициализации
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [reactions, setReactions] = useState({});
   const messagesEndRef = useRef(null);
+
+  // Автосохранение черновика
+  useEffect(() => {
+    const draftKey = `draft-${currentUser?.id}-${activeCategory}`;
+    if (inputValue) {
+      localStorage.setItem(draftKey, inputValue);
+    }
+  }, [inputValue, currentUser, activeCategory]);
+
+  // Загрузка черновика
+  useEffect(() => {
+    if (!currentUser) return;
+    const draftKey = `draft-${currentUser.id}-${activeCategory}`;
+    const saved = localStorage.getItem(draftKey);
+    if (saved) {
+      setInputValue(saved);
+    }
+  }, [activeCategory, currentUser]);
 
   // === Загрузка истории ===
   useEffect(() => {
-    console.log('=== ЗАГРУЗКА ИСТОРИИ ===');
-    console.log('currentUser:', currentUser);
-    
     if (!currentUser) {
-      console.log('Нет пользователя - очищаем сообщения');
       setMessages({});
       setIsInitialized(false);
       return;
@@ -56,14 +79,9 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     try {
       const key = getUserChatsKey(currentUser.id);
       const saved = localStorage.getItem(key);
-      console.log('Ключ в localStorage:', key);
-      console.log('Найденные данные:', saved);
 
       if (saved) {
         const parsed = JSON.parse(saved);
-        console.log('Парсинг успешен:', parsed);
-
-        // Восстанавливаем структуру сообщений
         const restoredMessages = {};
         Object.keys(parsed).forEach(categoryId => {
           if (Array.isArray(parsed[categoryId])) {
@@ -73,12 +91,9 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
             }));
           }
         });
-
-        console.log('Восстановленные сообщения:', restoredMessages);
         setMessages(restoredMessages);
-        setIsInitialized(true); // Помечаем что инициализация завершена
+        setIsInitialized(true);
       } else {
-        console.log('Нет сохраненных данных - инициализируем пустой объект');
         setMessages({});
         setIsInitialized(true);
       }
@@ -93,29 +108,21 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
   useEffect(() => {
     if (!currentUser || !isInitialized) return;
 
-    console.log('=== СОХРАНЕНИЕ ИСТОРИИ ===');
-    console.log('Текущие сообщения:', messages);
-
     if (Object.keys(messages).length > 0) {
       try {
         const key = getUserChatsKey(currentUser.id);
-        const dataToSave = JSON.stringify(messages);
-        localStorage.setItem(key, dataToSave);
-        console.log('✅ УСПЕШНО сохранено в localStorage');
+        localStorage.setItem(key, JSON.stringify(messages));
       } catch (error) {
-        console.error('❌ ОШИБКА сохранения:', error);
+        console.error('ОШИБКА сохранения:', error);
       }
     }
   }, [messages, currentUser, isInitialized]);
 
-  // === Приветственное сообщение ТОЛЬКО для новых категорий ===
+  // === Приветственное сообщение ===
   useEffect(() => {
     if (!currentUser || !isInitialized) return;
     
-    // Создаем приветственное сообщение только если категория полностью новая
     if (!messages[activeCategory]) {
-      console.log('Создаем приветственное сообщение для новой категории:', activeCategory);
-      
       const cat = categories.find(c => c.id === activeCategory);
       const welcome = {
         id: Date.now(),
@@ -124,14 +131,10 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
         timestamp: new Date(),
       };
       
-      setMessages(prev => {
-        const newMessages = {
-          ...prev,
-          [activeCategory]: [welcome]
-        };
-        console.log('Новые сообщения после приветствия:', newMessages);
-        return newMessages;
-      });
+      setMessages(prev => ({
+        ...prev,
+        [activeCategory]: [welcome]
+      }));
     }
   }, [activeCategory, categories, currentUser, messages, isInitialized]);
 
@@ -146,7 +149,6 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     return map[id] || map.general;
   };
 
-  // === Скролл вниз ===
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -155,7 +157,6 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     scrollToBottom();
   }, [messages[activeCategory]]);
 
-  // === Копирование ===
   const handleCopyMessage = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -165,7 +166,6 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     }
   };
 
-  // === Редактирование ===
   const startEdit = (id, text) => {
     setEditingId(id);
     setEditValue(text);
@@ -203,7 +203,6 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     }
   };
 
-  // === Удаление ===
   const handleDeleteMessage = (id) => {
     setMessages(prev => {
       const msgs = prev[activeCategory] || [];
@@ -211,10 +210,29 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
       if (idx === -1) return prev;
       return { ...prev, [activeCategory]: msgs.slice(0, idx) };
     });
-    message.success('Сообщение и ответы удалены');
+    message.success('Сообщение удалено');
   };
 
-  // === Меню действий ===
+  const handleAddReaction = (messageId, emoji) => {
+    setReactions(prev => ({
+      ...prev,
+      [messageId]: emoji
+    }));
+  };
+
+  const exportToPDF = () => {
+    const currentMsgs = messages[activeCategory] || [];
+    const text = currentMsgs.map(m => `${m.sender === 'bot' ? 'AI' : 'You'}: ${m.text}`).join('\n\n');
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', `chat-${activeCategory}-${new Date().toISOString()}.txt`);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    message.success('Чат экспортирован!');
+  };
+
   const MessageActions = ({ message }) => {
     const items = [
       { key: 'copy', label: 'Копировать', icon: <CopyOutlined />, onClick: () => handleCopyMessage(message.text) },
@@ -228,13 +246,33 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
     }
 
     return (
-      <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
-        <Button type="text" icon={<MoreOutlined />} size="small" />
-      </Dropdown>
+      <Space>
+        <Popover
+          content={
+            <Space>
+              {EMOJI_REACTIONS.map(emoji => (
+                <Button
+                  key={emoji}
+                  type="text"
+                  onClick={() => handleAddReaction(message.id, emoji)}
+                >
+                  {emoji}
+                </Button>
+              ))}
+            </Space>
+          }
+          title="Реакция"
+          trigger="click"
+        >
+          <Button type="text" size="small">😊</Button>
+        </Popover>
+        <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+          <Button type="text" icon={<MoreOutlined />} size="small" />
+        </Dropdown>
+      </Space>
     );
   };
 
-  // === Загрузка файлов ===
   const handleFilesUpload = (files) => {
     const msg = {
       id: Date.now(),
@@ -244,35 +282,14 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
       files,
     };
     
-    setMessages(prev => {
-      const newMessages = {
-        ...prev, 
-        [activeCategory]: [...(prev[activeCategory] || []), msg] 
-      };
-      return newMessages;
-    });
+    setMessages(prev => ({
+      ...prev, 
+      [activeCategory]: [...(prev[activeCategory] || []), msg] 
+    }));
     
     setShowFileUpload(false);
-
-    setTimeout(() => {
-      const bot = {
-        id: Date.now() + 1,
-        text: 'Файлы получены и анализируются.',
-        sender: 'bot',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => {
-        const newMessages = {
-          ...prev, 
-          [activeCategory]: [...(prev[activeCategory] || []), bot] 
-        };
-        return newMessages;
-      });
-    }, 2000);
   };
 
-  // === Отправка сообщения ===
   const handleSend = async () => {
     if (!currentUser) {
       message.error('Войдите в систему');
@@ -287,16 +304,14 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
       timestamp: new Date()
     };
 
-    setMessages(prev => {
-      const currentCategoryMessages = prev[activeCategory] || [];
-      return {
-        ...prev,
-        [activeCategory]: [...currentCategoryMessages, userMessage]
-      };
-    });
+    setMessages(prev => ({
+      ...prev,
+      [activeCategory]: [...(prev[activeCategory] || []), userMessage]
+    }));
     
     const messageText = inputValue.trim();
     setInputValue('');
+    localStorage.removeItem(`draft-${currentUser.id}-${activeCategory}`);
     setLoading(true);
 
     try {
@@ -306,96 +321,66 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
         sessionId: currentUser.id
       });
 
+      if (!response || !response.message) {
+        throw new Error('Пустой ответ от сервера');
+      }
+
       const botMessage = {
         id: Date.now() + 1,
-        text: response.message || 'Получен ответ от сервера',
+        text: response.message,
         sender: 'bot',
         timestamp: new Date()
       };
       
-      setMessages(prev => {
-        const currentCategoryMessages = prev[activeCategory] || [];
-        return {
-          ...prev,
-          [activeCategory]: [...currentCategoryMessages, botMessage]
-        };
-      });
+      setMessages(prev => ({
+        ...prev,
+        [activeCategory]: [...(prev[activeCategory] || []), botMessage]
+      }));
+
+      playNotificationSound();
     } catch (error) {
       console.error('API Error:', error);
+      
+      let errorText = 'Извините, произошла ошибка. Попробуйте позже.';
+      
+      if (error.status === 401) {
+        errorText = 'Ваша сессия истекла. Пожалуйста, войдите заново.';
+      } else if (error.status === 400) {
+        errorText = error.message || 'Неверные данные. Проверьте ввод.';
+      } else if (error.status === 500) {
+        errorText = 'Ошибка сервера. Попробуйте позже.';
+      } else if (error.message) {
+        errorText = error.message;
+      }
+      
       const errorMessage = {
         id: Date.now() + 1,
-        text: 'Извините, произошла ошибка. Попробуйте позже.',
+        text: errorText,
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
+        isError: true
       };
       
-      setMessages(prev => {
-        const currentCategoryMessages = prev[activeCategory] || [];
-        return {
-          ...prev,
-          [activeCategory]: [...currentCategoryMessages, errorMessage]
-        };
-      });
+      setMessages(prev => ({
+        ...prev,
+        [activeCategory]: [...(prev[activeCategory] || []), errorMessage]
+      }));
+      
+      message.error(errorText);
     } finally {
       setLoading(false);
     }
   };
 
-  const getCategoryResponse = (id, msg) => {
-    const lower = msg.toLowerCase();
-    const responses = {
-      finance: {
-        default: 'Для финансовых вопросов рекомендую: вести регулярный учет доходов/расходов, использовать УСН для оптимизации налогов, создавать финансовую подушку безопасности.',
-        tax: 'Для ИП на УСН основные налоги: 6% с доходов или 15% с доходов за вычетом расходов. Также нужно платить страховые взносы.',
-        report: 'Основные отчеты для ИП: декларация по УСН (до 30 апреля), отчетность за сотрудников в ПФР, ФСС и ФНС.',
-        planning: 'Для финансового планирования: определите ежемесячные расходы, создайте резервный фонд (3-6 месяцев расходов), планируйте налоги заранее.'
-      },
-      marketing: {
-        default: 'Для маркетинга малого бизнеса: используйте соцсети для вовлечения аудитории, запустите реферальную программу, работайте с отзывами клиентов.',
-        social: 'Для продвижения в соцсетях: публикуйте полезный контент, используйте сторис и reels, взаимодействуйте с аудиторией в комментариях.',
-        promotion: 'Эффективные методы продвижения: локальный SEO, контекстная реклама, сотрудничество с блогерами, email-рассылки.',
-        clients: 'Для привлечения клиентов: предложите бесплатную консультацию, запустите акцию для новых клиентов, используйте отзывы в рекламе.'
-      },
-      legal: {
-        default: 'По юридическим вопросам: всегда заключайте письменные договоры, ведите документацию properly, консультируйтесь со специалистом при сложных вопросах.',
-        contract: 'В договоре обязательно укажите: предмет, сроки, стоимость, ответственность сторон, порядок разрешения споров.',
-        rights: 'Основные права ИП: свободная предпринимательская деятельность, выбор системы налогообложения, защита прав в суде.',
-        compliance: 'Для соблюдения требований: ведите кассовую дисциплину, храните документы 4-5 лет, своевременно сдавайте отчетность.'
-      },
-      hr: {
-        default: 'Для HR вопросов: разработайте четкие должностные инструкции, внедрите систему onboarding, регулярно проводите оценку сотрудников.',
-        hiring: 'При найме сотрудников: составьте понятное описание вакансии, проводите структурированные собеседования, проверяйте рекомендации.',
-        management: 'Для управления персоналом: установите четкие KPI, проводите регулярные встречи 1-на-1, создавайте карьерные треки.',
-        motivation: 'Методы мотивации: конкурентная зарплата, бонусы за результаты, обучение за счет компании, гибкий график.'
-      },
-      general: {
-        default: 'Благодарю за вопрос! Как ИИ-помощник для бизнеса, я могу помочь с финансами, маркетингом, юридическими вопросами и управлением персоналом. Выберите конкретную тему или задайте свой вопрос.'
-      }
-    };
-
-    const categoryResponses = responses[id] || responses.general;
-    
-    if (lower.includes('налог') || lower.includes('налоги')) return categoryResponses.tax || categoryResponses.default;
-    if (lower.includes('отчет') || lower.includes('отчетность')) return categoryResponses.report || categoryResponses.default;
-    if (lower.includes('план') || lower.includes('бюджет')) return categoryResponses.planning || categoryResponses.default;
-    if (lower.includes('соцсет') || lower.includes('instagram')) return categoryResponses.social || categoryResponses.default;
-    if (lower.includes('продвижен') || lower.includes('реклам')) return categoryResponses.promotion || categoryResponses.default;
-    if (lower.includes('клиент') || lower.includes('покупател')) return categoryResponses.clients || categoryResponses.default;
-    if (lower.includes('договор') || lower.includes('контракт')) return categoryResponses.contract || categoryResponses.default;
-    if (lower.includes('права') || lower.includes('обязанност')) return categoryResponses.rights || categoryResponses.default;
-    if (lower.includes('требован') || lower.includes('закон')) return categoryResponses.compliance || categoryResponses.default;
-    if (lower.includes('найм') || lower.includes('сотрудник')) return categoryResponses.hiring || categoryResponses.default;
-    if (lower.includes('управлен') || lower.includes('руководств')) return categoryResponses.management || categoryResponses.default;
-    if (lower.includes('мотивац') || lower.includes('стимул')) return categoryResponses.motivation || categoryResponses.default;
-    
-    return categoryResponses.default;
-  };
-
   const currentMessages = messages[activeCategory] || [];
   const currentCategory = categories.find(c => c.id === activeCategory);
+  
+  const filteredMessages = searchText 
+    ? currentMessages.filter(m => m.text.toLowerCase().includes(searchText.toLowerCase()))
+    : currentMessages;
 
   return (
-    <div className="chat-interface">
+    <div className="chat-interface" style={{ backgroundColor: darkMode ? '#1f1f1f' : '#fff' }}>
       <div className="chat-header">
         <Space>
           <Avatar size="large" icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
@@ -405,20 +390,30 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
             <Text type="secondary" style={{ fontSize: 12 }}>{currentCategory?.description || 'Задавайте вопросы'}</Text>
           </div>
         </Space>
-        <Tag color="blue">{currentMessages.length} сообщ.</Tag>
+        <Space>
+          <Input
+            placeholder="Поиск..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 150 }}
+          />
+          <Button icon={<DownloadOutlined />} onClick={exportToPDF} title="Экспортировать чат" />
+          <Tag color="blue">{currentMessages.length} сообщ.</Tag>
+        </Space>
       </div>
 
       <Divider style={{ margin: '16px 0' }} />
 
       <div className="messages-container">
         <List
-          dataSource={currentMessages}
+          dataSource={filteredMessages}
           renderItem={(message) => (
-            <List.Item className={`message-item ${message.sender}-message`}>
+            <List.Item className={`message-item ${message.sender}-message ${message.isError ? 'error-message' : ''}`}>
               <Space align="start" size="middle" style={{ width: '100%' }}>
                 <Avatar
                   icon={message.sender === 'bot' ? <RobotOutlined /> : <UserOutlined />}
-                  style={{ backgroundColor: message.sender === 'bot' ? '#1890ff' : '#52c41a' }}
+                  style={{ backgroundColor: message.isError ? '#ff4d4f' : (message.sender === 'bot' ? '#1890ff' : '#52c41a') }}
                 />
                 <div className="message-content" style={{ flex: 1 }}>
                   {editingId === message.id ? (
@@ -443,6 +438,11 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
                         {message.text}
                         {message.edited && <Text type="secondary" style={{ fontSize: 10, marginLeft: 4 }}>(ред.)</Text>}
                       </Text>
+                      {reactions[message.id] && (
+                        <div style={{ marginTop: 8 }}>
+                          <Text>{reactions[message.id]}</Text>
+                        </div>
+                      )}
                       {message.files && (
                         <div className="file-attachments">
                           <PaperClipOutlined /> {message.files.length} файл(ов)
@@ -458,14 +458,7 @@ const ChatInterface = ({ activeCategory, categories, currentUser }) => {
             </List.Item>
           )}
         />
-        {loading && (
-          <div className="message-item bot-message">
-            <Space>
-              <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
-              <Text type="secondary">Печатает...</Text>
-            </Space>
-          </div>
-        )}
+        {loading && <MessageSkeleton />}
         <div ref={messagesEndRef} />
       </div>
 
